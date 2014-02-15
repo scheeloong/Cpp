@@ -1,0 +1,32 @@
+all: rnet
+	g++ -g -Wall -lX11 *.cpp -o rnet
+
+rnet: Main.o Rparser.o Resistor.o Node.o NodeList.o ResistorList.o easygl.o graphics.o
+	g++ -o rnet Main.o Rparser.o Resistor.o Node.o NodeList.o ResistorList.o easygl.o graphics.o
+
+Main.o: Main.cpp NodeList.h ResistorList.h Resistor.h Node.h Rparser.h easygl.h
+	g++ -g -Wall -c Main.cpp
+
+easygl.o: easygl.cpp easygl.h easygl_constants.h
+	g++ -g -Wall -c easygl.cpp
+
+graphics.o: graphics.cpp graphics.h easygl_constants.h
+	g++ -g -Wall -c graphics.cpp
+
+Rparser.o: Rparser.cpp Rparser.h
+	g++ -g -Wall -c Rparser.cpp
+
+NodeList.o: NodeList.cpp NodeList.h Resistor.h ResistorList.h easygl.h
+	g++ -g -Wall -c NodeList.cpp
+
+ResistorList.o: ResistorList.cpp ResistorList.h Resistor.h
+	g++ -g -Wall -c ResistorList.cpp
+
+Resistor.o: Resistor.cpp Resistor.h
+	g++ -g -Wall -c Resistor.cpp
+
+Node.o: Node.cpp Node.h Resistor.h 
+	g++ -g -Wall -c Node.cpp
+
+clean:
+	rm -rf *o rnet
