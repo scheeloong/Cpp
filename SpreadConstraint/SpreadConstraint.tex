@@ -1,0 +1,860 @@
+\documentclass[a4paper,12pt]{article} 
+\usepackage{amssymb}  % For \therefore 
+
+
+\begin{document}
+\title{Soon Chee Loong Research Summary}
+\author{Soon Chee Loong \thanks{University of Toronto} 
+ }
+\date {\today}
+
+\maketitle 
+\tableofcontents
+
+\section{Introduction}
+
+This paper is where I present my research work and findings so that anyone can read this and understand the work I have done during the Summer 2014 at Toronto Intelligent Decision Engineering Laboratory (TIDEL). 
+I was supervised by both Prof. Christopher Beck and his PhD student, Wen Yang Ku. 
+
+I started my research on the NValue Constraint for about a month. However, Prof. Beck decided it was too intellectually challenging for an undergraduate student to complete within four months. Therefore, I was reassigned to the Element Constraint. 
+
+After I was done implementing the Element Constraint, I was assigned to the Spread Constraint described by the paper \textit{Simplification and extension of the SPREAD Constraint} by Pierre Schaus et al. As the paper was rather difficult to understand completely, and leaves out a lot of mathematical details as well as programming implementation details, I share my expertise on the subject here. Below, I explain Spread Constraint in detail, such that undergraduate students can understand it easily. I also found an incomplete mathematical assumption in the paper, that was confirmed by Prof. Pierre himself via email. I share the correction below and the propagation algorithm that works with the correction.
+The results are, the propagation algorithm I implemented from scratch is able to prune tighter than CP Optimizer (current best commercial solver as of writing according to Prof. Beck). 
+
+For the people at TIDEL, 
+I present a summary of my 15 week's work here. 
+
+For future undergraduate students at TIDEL,
+I present my guide to reading research papers as I found them helpful. 
+
+\section{Spread Constraint}
+Given finite-domain variables, $X = {x1, x2, ... , xn}$, and bounded domain continuous variables $\mu$, $\sigma$, and $\tilde{x}$. Collection of values taken by $X$ has mean $\mu$, and standard deviation $\sigma$. 
+$$spread(X,\mu,\sigma)$$
+
+\subsection{Motivation} 
+In the Electrical and Computer Engineering program, there are 3 different class sections as there are 350 students in the program although we assume each lecture hall can fit all 350 students. The first class section, has an available time slot on Wednesday from 1pm-3pm. We denote this as $X_{1}$ = [1,3]. Similarly, $X_{2}$ = [2,6], $X_{3}$ = [3,9]. We want to assign a 1 hour time slot of the MIE562 course to each lecture section such that the the standard deviation between lecture section is reduced, so that the lecturer for MIE562 course only needs to be on campus for the shortest period of time. Note, we assume that it is possible to assign $X_{1}$ = 3 = $X_{2}$ = $X_{3}$ , allowing the lecturer to teach only for an hour. As classes run from 9am till 6pm, the maximum possible standard deviation is 9. We denote this as $\sigma$ = [0,9]. 
+To simplify the problem initially, we assign the mean, $\mu$ = [3,3]. 
+
+\subsection{Problem Statement}
+\begin{equation}
+ \label{XONE} X_{1} = [1,3] 
+\end{equation} 
+\begin{equation}
+ \label{XTWO} X_{2} = [2,6] 
+\end{equation} 
+\begin{equation}
+ \label{XTHREE} X_{3} = [3,9] 
+\end{equation} 
+\begin{equation}
+\label{MEAN} \mu = [3,3] = [\mu_{lb}, \mu_{ub}]
+\end{equation} 
+\begin{equation}
+\label{SD} \sigma = [0,9] =  [\sigma_{lb}, \sigma_{ub}]
+\end{equation} 
+
+Want to minimize $\sigma = \sqrt{ \frac{1}{N} \sum\limits_{i=1}^n (X_{i} - \mu)^2}$
+
+Subjected to constraints
+\begin{equation}
+\label{CONSSD} \sigma = \sqrt{ \frac{1}{n} \sum\limits_{i=1}^n (X_{i} - \mu)^2} 
+\end{equation} 
+
+$$ \mu = \frac{\sum\limits_{i=1}^n X_{i}}{n}$$
+
+We can simplify this problem. Firstly, note that minimizing $\sigma^2$ also minimizes $\sigma$ $\forall$ $\sigma \geq 0$. Also, $n$ is always a constant for every given problem, and multiplying a constant does not change the algorithm. Thus, simplify problem by minimizing 
+$n\sigma^2 =  \sum\limits_{i=1}^n (X_{i} - \mu)^2$ instead. 
+
+Let $q = n\mu =  \sum\limits_{i=1}^n X_{i}$ , 
+this redefines 
+$n\sigma^2 =  \sum\limits_{i=1}^n (X_{i} - \frac{q}{n})^2 = 
+\sum\limits_{i=1}^n X_{i}^2 - \frac{2q\sum\limits_{i=1}^n X_{i}}{n} + n(\frac{q^2}{n^2}) = \sum\limits_{i=1}^n X_{i}^2 - \frac{2q^2}{n} + \frac{q^2}{n} =  \sum\limits_{i=1}^n X_{i}^2 - \frac{q^2}{n}$
+
+
+\begin{equation}
+\label{OPTONE}\therefore n\sigma^2 = \sum\limits_{i=1}^n X_{i}^2 - \frac{q^2}{n}
+\end{equation} 
+
+
+As $n$ remains a constant throughout the entire problem, 
+we can simplify the constraint 
+$\mu = \frac{\sum\limits_{i=1}^n X_{i}}{n}$ to
+
+\begin{equation}
+\label{CONSMU} q = \sum\limits_{i=1}^n X_{i}
+\end{equation} 
+
+
+Finally, the problem statement is redefined using Equations \ref{XONE}, \ref{XTWO} , \ref{XTHREE} , \ref{MEAN} , and \ref{SD} 
+subject to Constraints \ref{CONSSD} and \ref{CONSMU} with goal of minimizing Equation \ref{OPTONE}. 
+
+\subsection{V Centered Assignment}
+The mean of all assigned values $\forall$ $X_{i}$ must lie within the interval of all $X_{i}$ domains. In other words, the mean must lie within [1,9] as [1,9] includes the domains $\forall$ $X_{i}$ in this particular problem. 
+
+To locate the mean, break the domains $\forall$ $X_{i}$ into contiguous intervals. 
+There will be at most $(2n - 1)$ intervals. For this particular case, the contiguous intervals are 
+$I_{1} = [1,2]$ $I_{2} = [2,3]$ $I_{3} = [3,6]$  $I_{4} = [6,9]$. This can be done in $\Theta \in (nlgn)$ time complexity using mergesort while removing duplicates. 
+
+Let $I_{q} = [I_{qlb}, I_{qub}]$ be the interval in which the mean is in. 
+To simplify the problem, assume $I_{q}$ is known and $I_{q} = I_{3} $. In other words, the mean is within [3,6]. 
+
+This means that to minimize the variance, assign values $\forall$ X must be as close to the mean as possible. 
+Let $R(I_{q})$ be the set of all X which is absolutely to the right of $I_{q}$. 
+In other words, $X_{lb} \geq I_{qub}$.
+Let $L(I_{q})$ be the set of all X which is absolutely to the left of $I_{q}$. 
+In other words, $X_{ub} \leq I_{qlb}$.
+Let $M(I_{q})$ to be all remaining X not in $R(I_{q})$ or $L(I_{q})$.
+
+Then, the most optimal assign would be to assign all X in set $R(I_{q})$ to be their minimum value, $X_{lb}$ and all X in set $L(I_{q})$  to be their maximum value, $X_{ub}$ as it is closest to the mean which lies in the interval of $I_{q}$. 
+
+However,all remaining unassigned X from set $M(I_{q})$ have to be assigned values such that Constraint $\ref{CONSMU}$ is satisfied. We need to satisfy Constraint $\ref{CONSMU}$ because we need to make sure the mean remains as 3 in this specific problem where $\mu_{lb} = \mu_{ub} = 3$.  To reduce $\sigma$, assign all X in 
+$M(I_{q})$ to the same value. Call this value, $v$. 
+
+Let Extreme Sums, $ES(I_{q})$ be the sum of all assigned X values in $I_{q}$. 
+
+$ES(I_{q}) = \sum_{X_{i} \in R(I_{q})}X_{i} + \sum_{X_{i} \in L(I_{q})}X_{i}$
+
+Let $m$ = number of unassigned X values = cardinality of $M(I_{q})$. 
+
+To calculate $v$, 
+we need to calculate the value that all X in $M(I_{q})$ must take in order to satisfy Constraint $\ref{CONSMU}$ after all X in both $R(I_{q})$ and $L(I_{q})$ are assigned values. This means we need to satisfy  $mv + ES(I_{q}) = q $
+
+Therefore, 
+\begin{equation}
+\label{VAssignment} v = \frac{q - ES(I_{q})}{m}
+\end{equation} 
+
+Let Sum of Squares 
+\begin{equation}
+\label{SUMOFSQUARES}
+SS(I_{q}) =  \sum_{X_{i} \in R(I_{q})}X_{i}^2 + \sum_{X_{i} \in L(I_{q})}X_{i}^2
+\end{equation} 
+
+
+As a result, we can redefine Equation \ref{OPTONE} to 
+$n\sigma^2 = SS(I_{q}) + mv^2 - \frac{q^2}{n} = $
+\begin{equation}
+\label{OPTONEA}
+ n\sigma^2  = \sum_{X_{i} \in R(I_{q})}X_{i}^2 + \sum_{X_{i} \in L(I_{q})}X_{i}^2 + mv^2 - \frac{q^2}{n}  
+\end{equation} 
+$$
+ = \sum_{X_{i} \in R(I_{q})}X_{i}^2 + \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \frac{(q - ES(I_{q}))^2}{m}  - \frac{q^2}{n}  
+$$
+\begin{equation}
+\label{OPTTWO} \therefore n\sigma^2 = \sum_{X_{i} \in R(I_{q})}X_{i}^2 + \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \frac{(q - ES(I_{q}))^2}{m}  - \frac{q^2}{n} 
+\end{equation} 
+
+Note: For the case where $m = 0 \Rightarrow$ there is no $X$ in the set $M(I_{q})$, set $v=0$. 
+Thus, Equation \ref{OPTTWO} becomes
+\begin{equation}
+\label{OPTTHREE} \therefore n\sigma^2 = \sum_{X_{i} \in R(I_{q})}X_{i}^2 + \sum_{X_{i} \in L(I_{q})}X_{i}^2  - \frac{q^2}{n} 
+\end{equation} 
+
+Note: For case where $m = 0$, Equation \ref{OPTONEA} turns into 
+\begin{equation}
+\label{OPTONEB}
+ n\sigma^2  = \sum_{X_{i} \in R(I_{q})}X_{i}^2 + \sum_{X_{i} \in L(I_{q})}X_{i}^2 - \frac{q^2}{n}  
+\end{equation} 
+
+
+To find out which interval that the mean belongs to, 
+let $V(I) = [V(I)_{lb}, V(I)_{ub}]$ be the possible values of $q$ that can exist in interval $I$. Therefore, 
+$$V(I)_{lb} = ES(I) + (m)*(I_{lb})$$
+$$V(I)_{ub} = ES(I) + (m)*(I_{ub})$$
+The mean, $\mu$ then belongs to the interval where $V(I)_{lb} \leq q \leq V(I)_{ub}$. 
+
+Note: Both $q$ and $\mu$ becomes a value after all $X$ are assigned values, which allows us to classify $q$ and $\mu$ into one of the intervals. 
+
+\subsection{Propagation Algorithm}
+Below, I summarize methods to propagate $\mu$, $\sigma$, and $X$. 
+
+\subsubsection{Propagate $\mu$ using $X$}
+To propagate $\mu$ using $X$, 
+calculate the minimum and maximum mean that can be obtained from all assigned $X$ values. 
+
+Let $S_{lb} = \sum\limits_{i=1}^n X_{ilb}$
+Let $S_{ub} = \sum\limits_{i=1}^n X_{iub}$
+
+Therefore, 
+\begin{equation}
+\mu = [max(\frac{S_{lb}}{n}, \mu_{lb}) , min(\frac{S_{ub}}{n}, \mu_{ub})]
+\end{equation} 
+
+\subsubsection{Propagate $\mu$ using $\sigma$}
+
+
+We can show Equation \ref{OPTTWO} is convex, has a global minimum and continuous. 
+Proof: 
+\begin{itemize}
+\item  To prove convexity, 
+
+from Equation \ref{OPTTWO}
+$$\frac{\partial n \sigma^2}{\partial q} = \frac{2(q - ES(I_{q}))}{m} - \frac{2q}{n} $$
+
+Since $m \leq n$,
+
+$$ \frac{\partial^2 n \sigma^2}{\partial q^2} = \frac{2}{m} - \frac{2}{n} = 2(\frac{1}{m} - \frac{1}{n}) \geq 0
+$$
+
+Since the 2nd derivative is always $\geq$ 0, it is convex. 
+
+Note: This proof does not work for Equation \ref{OPTTHREE}. 
+
+\item To prove global minimum, 
+Since $$S_{lb} = ES(I_{1}) + (m)(I_{1lb})$$
+$$\Rightarrow ES(I_{1}) = S_{lb} - (m)(I_{1lb})$$
+
+Since $$S_{ub} = ES(I_{last}) + (m)(I_{lastub})$$
+$$\Rightarrow ES(I_{last}) = S_{ub} - (m)(I_{lastulb})$$
+This means 
+\begin{equation}
+\label{PROOFONE}
+\frac{\partial n \sigma^2}{\partial q}|_{q=S_{lb}} 
+= 2(\frac{S_{lb} - (S_{lb} - (m)(I_{1lb}))}{m} - \frac{S_{lb}}{n})
+= 2(I_{1lb} - \frac{S_{lb}}{n}) \leq 0
+\end{equation} 
+
+and
+\begin{equation}
+\label{PROOFTWO}
+\frac{\partial n \sigma^2}{\partial q}|_{q=S_{ub}} 
+= 2(\frac{S_{ub} - (S_{ub} - (m)(I_{lastub}))}{m} - \frac{S_{ub}}{n})
+= 2(I_{lastub} - \frac{S_{ub}}{n}) \geq 0
+\end{equation} 
+
+Since Equation \ref{PROOFONE} is decreasing whereas Equation \ref{PROOFTWO} is increasing, 
+this must mean there exist a global minimum between them. 
+
+\item To prove continuity,
+if $q = I_{(k)lb} = I_{(k+1)ub}$, can show $n\sigma^2(I_{k}) = n\sigma^2(I_{k+1})
+\Rightarrow$ $n\sigma^2$ is continuous. A detailed proof is given on the paper [1]. 
+\end{itemize}
+
+Since we have proven Equation \ref{OPTTWO} is convex, has a global minimum and continuous, we can use $\sigma_{ub}$ from Equation \ref{SD} to  be an upper bound on the value of $n\sigma^2$. To be clear, we use $n\sigma_{ub}^2$ as an upper bound to values that $n\sigma^2$ can take. We calculate the $q_{1}$ and $q_{2}$ that results in $n\sigma^2(q_{1}) = n\sigma_{ub}^2 = n\sigma^2(q_{2})$. From this calculated $q_{1}$ and $q_{2}$, we can use it to prune $u$ using 
+\begin{equation}
+\mu = [max(\frac{q_{1}}{n}, \mu_{lb}) , min(\frac{q_{2}}{n}, \mu_{ub})]
+\end{equation} 
+
+To explain further, from Equation \ref{SUMOFSQUARES} and \ref{OPTTWO}, 
+$$ \therefore n\sigma^2 = \sum_{X_{i} \in R(I_{q})}X_{i}^2 + \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \frac{(q - ES(I_{q}))^2}{m}  - \frac{q^2}{n} 
+$$
+$$ = SS(I_{q}) + \frac{(q - ES(I_{q}))^2}{m}  - \frac{q^2}{n} 
+$$
+$$ = SS(I_{q}) + \frac{q^2 - 2qES(I_{q}) + ES(I_{q})^2}{m} - \frac{q^2}{n}
+$$
+Rearranging the terms, 
+\begin{equation}
+\label{OPTFOUR} \therefore n\sigma^2 = q^2(\frac{1}{m} - \frac{1}{n}) - q(\frac{2ES(I_{q})}{m}) +  SS(I_{q})+ \frac{ES(I_{q})^2}{m}
+\end{equation}
+
+Set Equation \ref{OPTFOUR} equal to $n\sigma_{ub}^2$ and solve for q. 
+
+This $\Rightarrow$
+$$
+n\sigma^2 = q^2(\frac{1}{m} - \frac{1}{n}) - q(\frac{2ES(I_{q})}{m}) +  SS(I_{q})+ \frac{ES(I_{q})^2}{m} = n\sigma_{ub}^2
+$$
+$$ \Rightarrow
+q^2(\frac{1}{m} - \frac{1}{n}) - q(\frac{2ES(I_{q})}{m}) +  SS(I_{q})+ \frac{ES(I_{q})^2}{m} - n\sigma_{ub}^2 = 0
+$$
+Let $a=\frac{1}{m} - \frac{1}{n}$, $b=-(\frac{2ES(I_{q})}{m})$, $c= SS(I_{q})+ \frac{ES(I_{q})^2}{m} - n\sigma_{ub}^2$, $b'=\frac{b}{2}$, 
+
+Then, we can solve using 
+$$
+q_{1},q_{2}=-b' \pm \frac{\sqrt{b'^2-ac}}{a}
+$$
+where,
+$$
+q_{1} \geq q_{2} 
+$$
+
+Note: You need to calculate both $q_{1}$ and $q_{2}$ for each contiguous interval. 
+
+If at any interval, you find that the calculated $q_{1}$ and $q_{2}$  for that interval is within that interval, then you can check to see if you can prune the mean, $\mu$. 
+
+Since the graph for Equation \ref{OPTFOUR} is convex, if $q_{1}$ is in that interval and since $q_{1} \geq q_{2}$, you can use $q_{1}$ to try and prune the $\mu_{ub}$. Similarly, you can use $q_{2}$ to try and prune the $\mu_{lb}$ if $q_{2}$ lies within that interval. 
+
+\subsubsection{Propagate $\sigma$ using $X$}
+We can propagate $\sigma_{ub}$ using X. 
+Note:
+\begin{equation}
+\label{PRUNESIGMAUSINGX}
+n\sigma_{maxCalculated}^2 = \sum_{i=1}^n(X_{i})^2 - \frac{q^2}{n} 
+= \sum_{i=1}^n(X_{i})^2 - nu^2 = \sum_{i=1}^n(X_{i})^2 -
+\frac{\sum_{j=1}^n(X_{j})^2}{n}
+\end{equation} 
+
+Thus, assigning all $X_{i} = X_{iub}$ and $X_{j} = X_{jlb}$ to Equation \ref{PRUNESIGMAUSINGX} will give the an upper bound to the maximum $n\sigma^2$ that can be obtained from all the $X$. However, we can improve this bound.
+
+We can show that we must assign each X to their extreme values to attain the upper bound for the maximum $n\sigma^2$ that can be obtained from all the $X$. In other words, treating $X_{i} = X_{j}$ from Equation \ref{PRUNESIGMAUSINGX}, we need to assign $X_{i} = X_{iub}$ or $X_{i} = X_{ilb}$.
+
+Proof: 
+\begin{itemize}
+\item Case 1: Need show $\forall$ $X_{i} > \frac{\sum_{j=1}^nX_{j}}{n} = \mu$, assigning a greater value to $X_{i}$ $\Rightarrow$ $X_{i} + d$ where $d > 0$ will increase 
+$n\sigma^2$. 
+
+Since $$n\sigma^2(X_{i}) = \sum_{i=1}^n(X_{i})^2 -
+\frac{\sum_{i=1}^n(X_{i})^2}{n}$$
+$$\Rightarrow n\sigma^2(X_{i}+d)$$
+$$ = \sum_{i=1}^n(X_{i})^2 + 2dX_{i} + d^2 - \frac{\sum_{i=1}^n(X_{i})^2}{n} - \frac{2d\sum_{i=1}^nX_{i} + d^2}{n}$$ $$ = n\sigma^2(X_{i}) + d^2 + 2dX_{i} -\frac{2d\sum_{i=1}^nX_{i} + d^2}{n}$$
+$$ > n\sigma^2(X_{i}) + d^2 + 2dX_{i} -\frac{2dnX_{i} + d^2}{n}$$
+$ = n\sigma^2(X_{i}) + (n-1)d^2 \geq n\sigma^2(X_{i})$ for $n \geq 1$
+
+
+\item Case 2: Need show $\forall$ $X_{i} < \frac{\sum_{j=1}^nX_{j}}{n} = \mu$, assigning a smaller value to $X_{i}$ $\Rightarrow$ $X_{i} - d$ where $d > 0$ will increase 
+$n\sigma^2$. 
+
+The proof for this is simple as it is similar to Case 1. 
+\end{itemize}
+
+Therefore, we have shown that the $n\sigma^2_{maxCalculated}$ corresponds to each $X_{i}$ being assigned to either $X_{ilb}$ or $X_{iub}$. 
+
+Using brute force, we can try out all $2^n$ possible combinations and keep track of the $n\sigma^2_{maxCalculated}$. However, this is inefficient as it takes $\Theta \in (2^n)$. Therefore, we can use 4 different cases of inferences where we know whether $X_{i} = X_{ilb}$ or $X_{i} = X_{iub}$. For all other $X_{i}$ that do not belong to any of these 4 cases, we assign them as we would in Equation \ref{PRUNESIGMAUSINGX} and calculate the maximum possible standard deviation. Although not as tight as the brute force case, this algorithm only takes $\Theta \in (n)$ time and is tighter than only using Equation \ref{PRUNESIGMAUSINGX} by itself. 
+
+Let $S_{lb} = \sum\limits_{i=1}^n X_{ilb}$, $S_{ub} = \sum\limits_{i=1}^n X_{iub}$
+
+Let $\mu_{lbCalc} = \frac{S_{lb}}{n}$, $\mu_{ubCalc} = \frac{S_{ub}}{n}$ 
+
+Original mean, $\mu_{original} = [\mu_{lbCalc}, \mu_{ubCalc}]$
+
+Want to assign $X_{i}$ to either $X_{ilb}$ or $X_{iub}$ 
+such that distance to corresponding updated mean is larger. We call this, 
+distance to $\mu$
+
+If, assign $X_{i} = X_{ilb}$, 
+
+$$\mu_{ubCalcUpdate} =  \mu_{ubCalc} - \frac{(X_{iub} - X_{ilb})}{n}$$
+
+Updated mean,  $$\mu_{updated} = [\mu_{lbCalc}, \mu_{ubCalcUpdate}]$$
+
+Else, assign $X_{i} = X_{iub}$,
+$$\mu_{lbCalcUpdate} =  \mu_{lbCalc} + \frac{(X_{iub} - X_{ilb})}{n}$$
+
+Updated mean,  $$\mu_{updated} = [\mu_{lbCalcUpdate}, \mu_{ubCalc}]$$
+
+Let $A = |X_{iub} - \mu_{ubCalc}|$, 
+$B = |X_{iub} - \mu_{lbCalcUpdate}|$, 
+
+$C = |X_{ilb} - \mu_{lbCalc}|$, 
+$D = |X_{ilb} - \mu_{ubCalcUpdate}|$, 
+
+To calculate distance to $\mu$, $\Delta$
+
+Assign $X_{i} = X_{iub}$,
+
+Distance to $\mu$, $$\Delta = [min(A, B), max(A, B)] = [E,F]$$
+
+Assign $X_{i} = X_{ilb}$, 
+
+Distance to $\mu$, $$\Delta = [min(C, D), max(C, D)] = [G,H]$$
+
+The 4 cases of inferences and the default case for Equation \ref{PRUNESIGMAUSINGX} are: 
+
+$\forall X$,
+\begin{itemize}
+\item Case 1: if $G \geq F \Rightarrow X_{i} = X_{lb} = X_{j}$
+\item Case 2: if $E \geq H \Rightarrow X_{i} = X_{ub} = X_{j}$
+\item Case 3: if $X_{lb} \geq \mu_{ubCalc} \Rightarrow X_{i} = X_{ub} = X_{j}$
+\item Case 4: if $X_{ub} \leq \mu_{lbCalc} \Rightarrow X_{i} = X_{lb} = X_{j}$ 
+\item Default: $X_{i} = X_{ub}$, $X_{j} = X_{lb}$
+\end{itemize}
+
+
+For the specific problem where 
+$\mu_{lb} = \mu_{ub}$, we can replace Equation \ref{PRUNESIGMAUSINGX} to just using
+\begin{equation}
+\label{PRUNESIGMAUSINGXSPECIFICCASE}
+ \sigma_{maxCalculated} = \sqrt{\frac{\sum_{k=1}^n(X_{k} - \mu)^2} {n}}
+\end{equation} 
+where $X_{k}$ is corresponds to the upper or lower bound of X that hs a greater difference from mean $u$. In other words,
+if $(max(|X_{ilb} - u|, |X_{iub} - u|) = |X_{ilb} - u|) $
+$X_{k} = X_{ilb}$, else $X_{k} = X_{ulb}$. After assigning all $X_{k}$, we can calculate the $\sigma_{maxCalculated}$ from all $X$. However, I have tested and clarified that using the general case algorithm from Equation \ref{PRUNESIGMAUSINGX} with the 4 different cases will be able to prune tighter than 
+the specific case and I have stick to using the general case algorithm in my code.
+
+After calculation of $\sigma_{maxCalculated}$ from all $X$ (from either general or specific case), we can prune $\sigma$ using 
+
+\begin{equation}
+\label{PRUNESIGMAUSEX}
+\sigma = [\sigma_{lb}, min(\sigma_{maxCalculated} , \sigma_{ub})]
+\end{equation} 
+
+\subsubsection{Propagate $X$ for $\mu_{lb}=\mu_{ub}$}
+To propagate $X$, we need to use both $\sigma$ and $\mu$. We will start with the specific case where $\mu_{lb} = \mu_{ub} \Rightarrow q=constant$. 
+ Then, we can locate the contiguous interval, $I_{q}$ that contains $q$ and classify all the $X$ variables to the sets $R(I_{q})$, $L(I_{q})$, and $M(I_{q})$ $\Rightarrow$ each X must be in either one of the sets. 
+
+Using $\sigma_{ub}$, 
+\begin{itemize}
+\item Prune  $X_{ub}$ $\forall$ $X \in R(I_{q})$ 
+
+By shifting $X_{(lb)shift}=X_{lb} + d$, where $d>0$, the $\sigma_{maxCalculated}$ increases to $\sigma_{shift}$. Then, we can find the shift in $d$ large enough such that $\sigma_{shift}=\sigma_{ub}$. Let $d_{max}$ be the shift amount in $X_{lb}$ such that $\sigma_{shift}=\sigma_{ub}$. Any shift larger than $d_{max}$ will result in $\sigma_{shift} > \sigma_{ub}$, which renders the solution inconsistent. Therefore, we can prune $X$ using 
+\begin{equation}
+\label{PRUNERXSPECIFIC} X=[X_{lb}, min(X_{lb}+d_{max},X_{ub})]
+\end{equation}
+
+\item Prune  $X_{lb}$ $\forall$ $X \in L(I_{q})$
+
+Similarly, we can shift $X_{(ub)shift}=X_{ub} - d$, where $d>0$, the $\sigma_{maxCalculated}$ increases to $\sigma_{shift}$. Let $d_{min}$ be the shift amount in $X_{ub}$ such that $\sigma_{shift}=\sigma_{ub}$. Any shift larger than $d_{min}$ will result in $\sigma_{shift} > \sigma_{ub}$, which renders the solution inconsistent. Therefore, we can prune $X$ using 
+\begin{equation}
+\label{PRUNELXSPECIFIC}
+X=[max(X_{lb}, X_{ub}-d_{min}),X_{ub}]
+\end{equation}
+
+\item Prune $X_{ub}$ and $X_{lb}$ $\forall$ $X \in M(I_{q})$
+
+Similarly, we can prune $X$ using 
+\begin{equation}
+\label{PRUNEMXSPECIFIC}
+X=[max(X_{lb}, X_{ub}-d_{min}),min(X_{lb}+d_{max},X_{ub})]
+\end{equation}
+\end{itemize} 
+
+By shifting $X_{((j)lb)shift}=X_{(j)lb} + d$
+
+$\Rightarrow$
+\begin{itemize}
+
+\item $ES(I_{q})_{shift} = ES(I_{q}) + d$
+
+\item $v_{shift} = \frac{q-ES(I_{q})_{shift})}{m} = \frac{q-(ES(I_{q}) + d)}{m} = \frac{q - ES(I_{q}) - d}{m} = v-\frac{d}{m}$
+
+\item For case where $m \neq 0$, from Equation \ref{OPTONEA},
+$$
+n\sigma^2_{shift}  = \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \sum_{X_{i} \in R(I_{q}), X_{i}\neq X_{j}}X_{i}^2 + (X_{(j)lb} + d)^2 + m(v-\frac{d}{m})^2 - \frac{q^2}{n}
+$$ 
+$$
+= \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \sum_{X_{i} \in R(I_{q})}X_{i}^2 + 2dX_{(j)lb} + d^2 + mv^2 -2dv + \frac{d^2}{m} - \frac{q^2}{n}
+$$
+$$
+= n\sigma^2 + 2dX_{(j)lb} + d^2 -2dv + \frac{d^2}{m}
+$$
+$$
+= d^2(1+\frac{1}{m}) + 2d(X_{(j)lb}-v) + n\sigma^2
+$$
+
+\begin{equation}
+\label{OPTSHIFT}
+\therefore n\sigma^2_{shift}(d)= d^2(1+\frac{1}{m}) + 2d(X_{(j)lb}-v) + n\sigma^2
+\end{equation}
+
+\item For case where $m = 0$, from Equation \ref{OPTONEB},
+$$
+n\sigma^2_{shift}  = \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \sum_{X_{i} \in R(I_{q}), X_{i}\neq X_{j}}X_{i}^2 + (X_{(j)lb} + d)^2 - \frac{q^2}{n}
+$$ 
+$$
+= \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \sum_{X_{i} \in R(I_{q})}X_{i}^2 + 2dX_{(j)lb} - \frac{q^2}{n}
+$$
+$$
+= n\sigma^2 + 2dX_{(j)lb} + d^2 
+$$
+$$
+= d^2 + 2d(X_{(j)lb}) + n\sigma^2
+$$
+
+\begin{equation}
+\label{OPTSHIFTB}
+\therefore n\sigma^2_{shift}(d) = d^2 + 2d(X_{(j)lb}) + n\sigma^2
+\end{equation}
+
+\end{itemize}
+
+To solve for $d_{max}$, set Equation \ref{OPTSHIFT} equal $n \sigma_{ub}^2$ and solve for $d$. 
+
+$$
+\Rightarrow n\sigma^2_{shift}(d)= d^2(1+\frac{1}{m}) + 2d(X_{(j)lb}-v) + n\sigma^2 = n \sigma_{ub}^2
+$$
+
+$$
+\Rightarrow d^2(1+\frac{1}{m}) + 2d(X_{(j)lb}-v) + n\sigma^2 - n \sigma_{ub}^2 = 0
+$$
+
+Let $a = 1+\frac{1}{m}$, $b=2(X_{(j)lb}-v)$, $c=n\sigma^2 - n \sigma_{ub}^2$, $b'=\frac{b}{2}$, 
+
+$$ \Rightarrow d_{max}= -b' + \frac{\sqrt{b'^2-ac}}{a}$$
+
+Note: For $m = 0$, set Equation \ref{OPTSHIFTB} equal $n \sigma_{ub}^2$ and solve for $d$. 
+
+$$
+\Rightarrow n\sigma^2_{shift}(d)= d^2 + 2d(X_{(j)lb}) + n\sigma^2 = n \sigma_{ub}^2
+$$
+
+$$
+\Rightarrow d^2 + 2d(X_{(j)lb}) + n\sigma^2 - n \sigma_{ub}^2 = 0
+$$
+
+Let $a = 1$, $b=2(X_{(j)lb})$, $c=n\sigma^2 - n \sigma_{ub}^2$, $b'=\frac{b}{2}$, 
+\begin{equation}
+\label{DMAXA} \Rightarrow d_{max}= -b' + \frac{\sqrt{b'^2-ac}}{a}
+\end{equation}
+
+By shifting $X_{((j)ub)shift}=X_{(j)ub} - d$
+
+
+$\Rightarrow$
+\begin{itemize}
+
+\item $ES(I_{q})_{shift} = ES(I_{q}) - d$
+
+\item $v_{shift} = \frac{q-ES(I_{q})_{shift})}{m} = \frac{q-(ES(I_{q}) - d)}{m} = \frac{q - ES(I_{q}) + d}{m} = v + \frac{d}{m}$
+
+\item For case where $m \neq 0$, from Equation \ref{OPTONEA},
+$$
+n\sigma^2_{shift}  = \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \sum_{X_{i} \in R(I_{q}), X_{i}\neq X_{j}}X_{i}^2 + (X_{(j)ub} - d)^2 + m(v + \frac{d}{m})^2 - \frac{q^2}{n}
+$$ 
+$$
+= \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \sum_{X_{i} \in R(I_{q})}X_{i}^2 - 2dX_{(j)lub} + d^2 + mv^2 + 2dv + \frac{d^2}{m} - \frac{q^2}{n}
+$$
+$$
+= n\sigma^2 - 2dX_{(j)ub} + d^2 +2dv + \frac{d^2}{m}
+$$
+$$
+= d^2(1+\frac{1}{m}) + 2d(v-X_{(j)ub}) + n\sigma^2
+$$
+
+\begin{equation}
+\label{OPTSHIFTC}
+\therefore n\sigma^2_{shift}(d)= d^2(1+\frac{1}{m}) + 2d(v-X_{(j)ub}) + n\sigma^2
+\end{equation}
+
+\item For case where $m = 0$, from Equation \ref{OPTONEB},
+$$
+n\sigma^2_{shift}  = \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \sum_{X_{i} \in R(I_{q}), X_{i}\neq X_{j}}X_{i}^2 + (X_{(j)ub} - d)^2 - \frac{q^2}{n}
+$$ 
+$$
+= \sum_{X_{i} \in L(I_{q})}X_{i}^2 + \sum_{X_{i} \in R(I_{q})}X_{i}^2 - 2dX_{(j)ub} - \frac{q^2}{n}
+$$
+$$
+= n\sigma^2 - 2dX_{(j)ub} + d^2 
+$$
+$$
+= d^2 - 2d(X_{(j)ub}) + n\sigma^2
+$$
+
+\begin{equation}
+\label{OPTSHIFTD}
+\therefore n\sigma^2_{shift}(d) = d^2 - 2d(X_{(j)ub}) + n\sigma^2
+\end{equation}
+
+\end{itemize}
+
+To solve for $d_{max}$, set Equation \ref{OPTSHIFTC} equal $n \sigma_{ub}^2$ and solve for $d$. 
+
+$$
+\Rightarrow n\sigma^2_{shift}(d)= d^2(1+\frac{1}{m}) + 2d(v-X_{(j)ub}) + n\sigma^2 = n \sigma_{ub}^2
+$$
+
+$$
+\Rightarrow d^2(1+\frac{1}{m}) + 2d(v-X_{(j)ub}) + n\sigma^2 - n \sigma_{ub}^2 = 0
+$$
+
+Let $a = 1+\frac{1}{m}$, $b=2(v-X_{(j)ub})$, $c=n\sigma^2 - n \sigma_{ub}^2$, $b'=\frac{b}{2}$, 
+
+$$ \Rightarrow d_{max}= -b' + \frac{\sqrt{b'^2-ac}}{a}$$
+
+Note: For $m = 0$, set Equation \ref{OPTSHIFTD} equal $n \sigma_{ub}^2$ and solve for $d$. 
+
+$$
+\Rightarrow n\sigma^2_{shift}(d)= d^2 - 2d(X_{(j)ub}) + n\sigma^2 = n \sigma_{ub}^2
+$$
+
+$$
+\Rightarrow d^2 - 2d(X_{(j)ub}) + n\sigma^2 - n \sigma_{ub}^2 = 0
+$$
+
+Let $a = 1$, $b=-2(X_{(j)ub})$, $c=n\sigma^2 - n \sigma_{ub}^2$, $b'=\frac{b}{2}$, 
+
+$$ \Rightarrow d_{min}= -b' + \frac{\sqrt{b'^2-ac}}{a}$$
+
+Now, we know how to solve for $d_{max}$ and  $d_{min}$. However, we must note that each time we shift $X$ by $d$, new contiguous intervals are formed. There is a chance that the newly made contiguous intervals results in $q$ being in an interval that has different sets of $R(I_{q})$, $L(I_{q})$, and  $M(I_{q})$
+that it had before. Therefore, we have to calculate $d_{max}$ and  $d_{min}$ $\forall X$ recursively. 
+
+\begin{itemize}
+\item Calculate $d_{max}$ $\forall$ $X \in R(I_{q})$
+
+Let $q_{0}=constant$ to differentiate it from $q$ which can be a variable for the case where $\mu_{lb}\neq\mu_{ub}$. Let $d_{11} = q_{0} - V(I_{q_{0}})_{lb}$. Note: 
+$d_{11}$ is the maximum shift $X_{lb}$ can take before $q_{0}$ change to another interval. This is because $X_{lb}$ will be greater than $q_{0}$, which makes $V(I_{q_{0}}) > q_{0}$ when $X_{(lb)shift} = X_{lb} + d_{11} + c$, where $c > 0$. 
+
+After calculating $d_{max(1)}$ from Equation \ref{DMAXA}, if $d_{max(1)} \leq d_{11}$, you can just use $d_{max(1)}$ to prune $X$ using Equation \ref{PRUNERXSPECIFIC}. 
+However, if $d_{max(1)} > d_{11}$, you know you can shift $X_{lb}$ by at least $d_{11}$ before any interval changing occurs. So, you shift $X_{lb}$ by $d_{11}$. Form the new contiguous intervals, and check which interval of the new contiguous intervals does the same $q_{0}$ belongs to, and calculate the new $d_{12} = q_{0} - V(I_{q_{0}})_{(lb)shift}$. You then calculate the new $d_{max(2)}$ from Equation \ref{DMAXA} and again check if $d_{max(2)} \leq d_{12}$. If it is, you know you can shift $X_{lb}$ by $(d_{max(2)} + d_{11})$ and use this sum to prune $X$ using Equation \ref{PRUNERXSPECIFIC}. If not, you recursively repeat the same calculations. You stop either when you reach a $d_{max(k)} \leq d_{1k}$ where $k$ is the number of times you recursively calculate  $d_{max}$ or when the current interval that $q_{0}$ belongs to is the first interval, $I_{1}$. In other words,  $I_{q_{0}} = I_{1}$.
+As a result, the sum that you used to prune $X$ using Equation \ref{PRUNERXSPECIFIC} should be $(d_{max(k)} + d_{11} + d_{12} + ... + d_{1(k-1)})$ , if you finally reach a $d_{max(k)} \leq d_{1k}$ or $(d_{11} + d_{12} + ... + d_{1k})$ if you reach the first interval, $I_{1}$ and $d_{max(k)} > d_{1k}$ where $k \leq (2n-1)$.
+
+
+\item Calculate $d_{min}$ $\forall$ $X \in L(I_{q})$
+
+Similar to calculating $d_{max}$ $\forall$ $X \in R(I_{q})$ above, you recursively calculate until you either reach $(d_{min(k)} + d_{11} + d_{12} + ... + d_{1(k-1)})$ , if you finally reach a $d_{min(k)} \leq d_{1k}$ or $(d_{11} + d_{12} + ... + d_{1k})$ if you reach the last interval, $I_{last}$ and $d_{min(k)} > d_{1k}$ where $k \leq (2n-1)$. However, in this case, $d_{11} = V(I_{q_{0}})_{ub} - q_{0}$ cause you are shifting $V(I_{q_{0}})_{ub}$ towards $q_{0}$ in this case instead of $V(I_{q_{0}})_{lb}$ towards $q_{0}$ for the $d_{max}$ case. Also, notice that the limit to the recursion is when you reach the final interval, $I_{last}$ and not the first interval $I_{1}$. 
+
+\item Calculate $d_{max}$ $\forall$ $X \in M(I_{q})$
+
+This is similar to calculating $d_{max}$ $\forall$ $X \in R(I_{q})$ above. However, you are always guaranteed to be able to shift $X_{lb}$ up till $v$ from Equation \ref{VAssignment}. Thus, you first shift $X_{lb}$ up to $v$, or $X_{(lb)shift} = X_{lb} + (v - X_{lb})$ before re-creating the intervals as you would in the calculating $d_{max}$ $\forall$ $X \in R(I_{q})$ case above and use the final sum of all recursive calls to prune $X_{ub}$ using Equation \ref{PRUNEMXSPECIFIC}. As a result, the sum should be of the form $((v - X_{lb}) + d_{max(k)} + d_{11} + d_{12} + ... + d_{1(k-1)})$ , if you finally reach a $d_{max(k)} \leq d_{1k}$  or $((v - X_{lb}) + d_{11} + d_{12} + ... + d_{1k})$ if you reach the first interval, $I_{1}$ and $d_{max(k)} > d_{1k}$ where $k \leq (2n-1)$.
+
+\item Calculate $d_{min}$ $\forall$ $X \in M(I_{q})$
+
+Similar to $d_{min}$ $\forall$ $X \in L(I_{q})$ and Calculate $d_{max}$ $\forall$ $X \in M(I_{q})$, you first shift $X_{ub}$ down till $v$ or $X_{(ub)shift} = X_{ub} - (X_{ub}-v)$ and recursively recalculate as you would in $d_{min}$ $\forall$ $X \in L(I_{q})$. As a result, the sum should be of the form  $((X_{ub}-v) + d_{min(k)} + d_{11} + d_{12} + ... + d_{1(k-1)})$ , if you finally reach a $d_{min(k)} \leq d_{1k}$ or $((X_{ub}-v) + d_{11} + d_{12} + ... + d_{1k})$ if you reach the last interval, $I_{last}$ and $d_{min(k)} > d_{1k}$ where $k \leq (2n-1)$.
+
+\end{itemize} 
+
+Note: Each time, you have to save the original $X_{lb}$ for the $R(I_{q})$ and $M(I_{q})$ case and original $X_{ub}$ for the $L(I_{q})$ and $M(I_{q})$ case as you have to restore $X$ to its original lower or upper bound cause you shifted it for recursively calculating $d_{max}$ and  $d_{min}$.
+
+\subsubsection{Propagate $X$ for $\mu_{lb}\neq\mu_{ub}$}
+This algorithm only propagates $X$ properly after the propagation on $\sigma$ using $X$, then propagation on $\mu$ using $X$ are executed as it assumes that the convex $n\sigma^2$ graph's domain is determined by the pruned domain of $\mu$. In short, you need to execute propagation on $\sigma$ using $X$ first, then propagation on $\mu$ using $X$, before you execute this propagation algorithm for it to work. You need to do this to ensure that $dmax(q)$ is concave or a straight line as the proof relies on this, and the propagation algorithm relies on these properties of $d_{max}(q)$ and $d_{min}(q)$.  
+
+In this case, as $q$ is a variable, we need to calculate the maximum $d_{max}$ and  $d_{min}$ that can be achieved $\forall$ $X$ so that we do not prune out the optimal solution. As the $d_{max}(q)$ and $d_{min}(q)$ functions can be proven to be concave or a straight line, derivable at each interval but may not be piecewise continuous. Let $f(q) = dMax(q)$. This means that the maximum value of the entire piecewise function for dmax(q) is either at the local maximum at the interval where $\frac{d^2f(q)}{dq^2} |_{q_{0}} = 0$, which is at point $q_{0}$ or at the end points of one of the other intervals that does not contain $\frac{d^2f(q)}{dq^2} |_{q_{0}} = 0$. 
+
+Proof: $d_{max}(q)$ and $d_{min}(q)$ is concave or a straight line, derivable at each interval, but may not be piecewise continuous. 
+
+As Equation \ref{OPTSHIFT} has been proven to be piecewise continuous and convex above, we can use this information to prove the properties of Equation \ref{DMAXA} since Equation \ref{DMAXA} relies on the value of Equation \ref{OPTSHIFT}. 
+
+We know Equation \ref{OPTSHIFT} $= n\sigma^2_{shift}(d)$ has to be $\geq 0$ and convex. 
+
+From Equation \ref{DMAXA}, 
+
+$a = 1+\frac{1}{m}$, $b=2(X_{(j)lb}-v)$, $c=n\sigma^2_{shift}(d)- n \sigma_{ub}^2$, $b'=\frac{b}{2}$, 
+
+$$ \Rightarrow d_{max}= -b' + \frac{\sqrt{b'^2-ac}}{a}$$
+
+Note: We limit the domain of the convex $n\sigma^2$ using the pruned domain of $\mu$, as not doing so would result in an inconsistent solution. We also know that the domains of $n \sigma_{ub}^2$ is pruned by the domains of $X$ but not perfectly, as to prune most tightly, we will have to try out all $2^n$ iterations of assigning every $X$ to either it's maximum and minimum, which is inefficient. In other words, only execute Propagation of X for $\mu_{lb}\neq\mu_{ub}$ after the propagation of both the domain $\sigma$ by $X$ and the domain of $\mu$ by $X$ are executed. This results in $n\sigma^2_{shift}(d)\leq n \sigma_{ub} \Rightarrow n\sigma^2_{shift}(d)- n \sigma_{ub}= c \leq 0$
+For $d_{max}$, $b=2(X_{(j)lb}-v)$. 
+For $d_{min}$, $b=2(v - X_{(j)ub})$
+This means $b>0$, $b<0$, or $b=0$. $b$ can be any real number. 
+Since, $a = 1+\frac{1}{m} \Rightarrow a > 0$.
+
+Lets start with $c \leq 0$, 
+There are 2 cases: 
+\begin{itemize}
+\item Case 1: $c=0$
+$$\Rightarrow  d_{max} = \frac{(-b + |b|)}{a} = 0, b \geq 0$$
+			$$  d_{max} =(-2b), b < 0$$
+		This essentially means $d_{max}$ is a straight line in this case. 
+
+\item Case 2: $c<0$
+
+Since $n\sigma^2_{shift}(d) \geq 0$ is convex, $\Rightarrow c=n\sigma^2_{shift}(d) - n \sigma_{ub}$ is also convex but $c \leq 0$. Now we know $c$ is a convex graph that is below 0. 
+
+As $a>0$, this scales $c$ by a factor of $a$ $\Rightarrow ac$ is also convex and $ac \leq 0$. 
+
+Now multiplying a function by $-1$ reflects it upon the $x-axis$. Therefore, 
+$-ac$ is a concave graph and $-ac \geq 0$.
+
+Adding a constant positive value will only shift the graph upwards. Thus, as $b'^2 \geq 0$, $\Rightarrow b'^2 - ac$ must also be a concave graph and is above or equal to 0. In other words, $(b'^2 - ac) \geq 0$. 
+
+Taking the square root of a concave graph that is $\geq 0$ only scales the graph at each point, but it remains continuous, concave and $\geq 0$. 
+Thus, $\sqrt{(b'^2 - ac)} \geq 0$.
+
+Again, adding a constant does not change the shape of the graph, thus, 
+$ -b' + \sqrt{(b'^2 - ac)}$ maintains its concavity and continuity. 
+
+However, at each different interval, $ -b' + \sqrt{(b'^2 - ac)}$ gets divided by different values of $a$ as $a = 1  + \frac{1}{m}$ for $m \neq 0$. This means that, 
+for any 2 consecutive intervals that do not have the same value of $m$, the graph will be discontinuous, which means the graphs may be piecewise discontinuous if 
+$m_{i} \neq m_{i+1}$  or piecewise continuous if $m_{i} = m_{i+1}$, where $i$ represents the indices of an interval. 
+
+As each interval represents part of a concave function that is continuous, each interval is derivable within itself. 
+
+Thus, proven $d_{max}(q)$ and $d_{min}(q)$ is concave or a straight line, derivable at each interval, but may not be piecewise continuous. 
+
+Note: $d_{min}(q)$ is accounted for in this prove as $b<0$, which can only occur for the case of $d_{min}(q)$ for $L(I_{q})$ and $M(I_{q})$ is accounted for in the proof. 
+
+
+\end{itemize}
+
+%
+
+Therefore, we will have to go through each contiguous interval that includes the pruned domain of $\mu$ to search for the maximum possible $d_{max}$ and $d_{min}$. 
+
+From the maximum possible $d_{max}$ and $d_{min}$, we keep note of the value of $q_{max}$ that results in $d_{max}$ and $q_{min}$ that results in $d_{min}$ respectively. We use $q_{max}$ as we would using $q_{0}$ in the Propagate $X$ for $\mu_{lb}=\mu_{ub}$ case for the Calculate $d_{max}$ $\forall$ $X \in R(I_{q})$ and Calculate $d_{max}$ $\forall$ $X \in M(I_{q})$ and calculate as usual. Similarly, we use $q_{min}$
+as we would using $q_{0}$ in the Propagate $X$ for $\mu_{lb}=\mu_{ub}$ case for the Calculate $d_{min}$ $\forall$ $X \in L(I_{q})$ and Calculate $d_{min}$ $\forall$ $X \in M(I_{q})$ and calculate as usual. However, an additional step would be to verify that $X$ is indeed in either $R(I_{q})$ or $ M(I_{q})$ or none when working with $q_{max}$. Similarly, we need to verify that $X$ is indeed in either $L(I_{q})$ or $M(I_{q})$ or none when working with $q_{min}$.
+
+Note: Unlike the specific Propagate $X$ for $\mu_{lb}=\mu_{ub}$ case where $\forall$ $X$ shares the same $q_{0}$, we will have to calculate the different $q_{0}$ $\forall$ $X$ based on their respective $q_{max}$ and $q_{min}$. Also, upon calculating $q_{max}$, you can only attempt to prune $X_{ub}$ using $R(I_{q_{max}})$ or $M(I_{q_{max}})$ if $X$ belongs to one of these sets for the value $q = q_{max}$. Similarly, upon calculating $q_{min}$, you can only attempt to prune $X_{lb}$ using $L(I_{q_{min}})$ or $M(I_{q_{min}})$ if $X$ belongs to one of these sets for the value $q = q_{min}$.
+
+Note: We can speed up the algorithm if we found out which set the current $X$ belongs to. 
+
+Since the same $q_{max}$ is used as $q_{0}$ for both calculating the $d_{max}$ in the $R(I_{q_{max}})$ and $M(I_{q_{max}})$ case, this means that this current $X$ can only belong to either $R(I_{q_{max}})$  or $M(I_{q_{max}})$ or none. Therefore, if we identify that the current $X$ belongs to $R(I_{q_{max}})$, we do not have to bother checking if the current $X$ belongs to $M(I_{q_{max}})$ or none. 
+
+Similarly, since the same $q_{min}$ is used as $q_{0}$ for both calculating the $d_{min}$ in the $L(I_{q_{min}})$ and $M(I_{q_{min}})$ case, this means that this current $X$ can only belong to either $L(I_{q_{min}})$  or $M(I_{q_{min}})$ or none. Therefore, if we identify that the current $X$ belongs to $L(I_{q_{min}})$, we do not have to bother checking if the current $X$ belongs to $M(I_{q_{min}})$ or none.  
+ 
+To search for the maximum possible $d_{max}$ and $d_{min}$, we iterate through each contiguous interval that includes the pruned domain of $\mu$  check if it contains the point where $\frac{\delta f(q)}{\delta q} |_{q_{0}} = 0$. If it does, it will be the only interval containing this point and the other interval will not. This intervals maximum value of $d_{max}(q)$ will be at this point, for the intervals on the right of this interval, the maximum value of  $d_{max}(q)$ will be at the interval's lower bound. For the intervals on the left of this interval, the maximum value of  $d_{max}(q)$ will be at the interval's upper bound. If no such interval exist, we only need to check if the first interval has the larger value at the upper bound of the interval or the lower bound of the interval. The other intervals will follow the same pattern since none of the intervals contains the point where $\frac{d^2f(q)}{dq^2} |_{q_{0}} = 0$, which means we are only at one side of the concave function region. The trivial case where both bounds are the same value means that we can pick any $q$ as they all result in the same value of 
+$d_{max}$ or $d_{min}$ respectively. 
+
+
+\section{Incomplete Information: \textit{Simplification and extension of the SPREAD Constraint by Pierre Schaus et al}}
+
+In the paper, it states that, 
+
+"one can search for $q^0$ such that $d_{max}$ is maximum: $\frac{\delta d_{max}(q)}{\delta q} |_{q=q^0} = 0$. ... As $q \in [q^{min}, q^{max}]$, if $q^0>q^{max}$ (resp. $q^0<q^{min}$), then (use) $q=q^{max}$ (resp. $q=q^{min}$). If $q \in [q^{min}, q^{max}]$,(then use) $q=q^0$. 
+
+This is incomplete as this only accounts for the case where the point $q^0$ from $\frac{\delta d_{max}(q)}{\delta q} |_{q=q^0} = 0$ from the interval that contains this point is in fact larger than every other point in every other interval. This is incomplete as each interval may be divided by different values of $a$, making it possible for intervals that do not contain this point, $q^0$ to have a higher 
+$d_{max}$ than this point. 
+
+\section{Summary of 15 weeks}
+Below I summarize my work for each week. It does not include the time I spent understanding all research papers that I read. 
+
+\subsection{Week 1}
+	\begin{itemize}
+		\item Work with SCIP Shell. 
+		\item Understand: 
+		\begin{itemize}
+			\item propagation algorithm
+			\item NP Hard, NP Complete
+			\item MIP and its application to Sudoku 
+			\item Minimum Constraint Family [2]
+			\item Generalized Arc Consistency 
+			\item Maximum Independent Set
+			\item Minimum Hitting Set 
+			\item Bound Consistency requirement in SCIP 
+			\item NValue Constraint 
+		\end{itemize} 
+	\end{itemize} 
+
+\subsection{Week 2}
+	\begin{itemize}
+		\item Understand: 
+		\begin{itemize}
+			\item branch and bound with extended list
+			\item branch and bound with admissable heuristics
+			\item branch and bound with A* 
+			\item branch and bound application to shortest path problem.
+			\item Difference between CP, MILP, CIP, LP, IP
+			\item Constraint Satisfaction Problems, search tree, and role of propagation algorithm. 
+			\item Introduction to Graph Theory. 
+			\item Ordered Intervals algorithm from [2] 
+		\end{itemize} 
+	\end{itemize} 
+	
+
+\subsection{Week 3}
+	\begin{itemize}
+		\item Implemented Graph Data Structure in C++ using both adjacency list and adjacency matrix representation. 
+		\item Implemented basic functions such as setEdge, getEdge,  insertVertex, delete Vertex, setWeight, numVertices, numEdges, setMark, getMark. 
+		\item Implemented Breadth First Search and Depth First Search.
+		\item Implemented Topological Sort, Prim's Algorithm. 
+	\end{itemize} 
+
+\subsection{Week 4}
+	\begin{itemize}
+		\item Understand: 
+		\begin{itemize}
+			\item Modeling problems using recurrence relations. 
+			\item Solving linear recurrence relations using: 
+			\begin{itemize}
+				\item Characteristic Equation
+				\item Repeated Substitution
+			\end{itemize}
+			\item Solving divide and conquer recurrence relation using 	Master's Theorem. 
+			\item Asymptotic Notations 
+		\end{itemize} 
+	\end{itemize} 
+	
+\subsection{Week 5}
+	\begin{itemize}
+		\item Understand and Implemented FastMIS 1986 algorithm, which is a approximation algorithm to solve the maximal independent set problem. 
+		\item Understand Bron-Kerbosch, a maximal clique algorithm. 
+		\item Implemented Intersection Graph and Interval Graph. 
+	\end{itemize} 
+
+	
+\subsection{Week 6}
+	\begin{itemize}
+		\item Verify that I will have to implement all 6 algorithms to implement the NValue Constraint. The 6 algorithms are: 
+		\begin{itemize}
+			\item Intersection Graph 
+			\item Interval Graph
+			\item Maximum Independent Set
+			\item Maximum Clique 
+			\item Minimum Clique Cover
+			\item Minimum Hitting Set 
+		\end{itemize}
+		\item Understand SCIP code structure
+		\item Understand Element Constraint 
+
+	\end{itemize}
+	
+\subsection{Week 7}
+	\begin{itemize}
+		\item Implemented problem read for Element Constraint on SCIP.
+		\item Implemented Constraint Checking for Element Constraint on SCIP. 
+	\end{itemize}
+	
+\subsection{Week 8}
+	\begin{itemize}
+		\item Designed and implemented propagation algorithm for Element Constraint on SCIP. 
+		\item Verify correctness of Element Constraint on SCIP by comparing with CP Optimizer.  
+	\end{itemize}
+	
+\subsection{Week 9, Week 10, Week 11}
+	\begin{itemize}
+		\item Understand Spread Constraint paper [1].
+		\item Wrote mathematical proofs to prove claims made by the Spread Constraint paper [3]. 
+		\item Calculated DMax(q) and its derivative set to 0 to solve for q0 as it was not given on paper. 
+		\item Understand the recursive DMax algorithm given. 
+		\item Prepared Powerpoint presentation on Spread Constraint for lab meeting. 
+		\item Set up skeleton code for coding Spread Constraint in SCIP. 
+	\end{itemize}
+
+\subsection{Week 12}
+	\begin{itemize}
+		\item Gave powerpoint presentation on Spread Constraint. 
+		\item Updated bubblesort to mergesort for forming contiguous intervals.  
+		\item Re-implemented entire spread constraint on C++ using Object Oriented Programming to increase flexibility in debugging the Spread Constraint.  
+		\item Implemented and tested algorithm to prune mean. 
+%		\item Found error in existing standard deviation code implemented in TIDEL.
+	\end{itemize}
+
+\subsection{Week 13}
+	\begin{itemize}
+%		\item Verify error in existing standard deviation code with test cases and fixed it. 
+		\item Found inconsistency in my implementation with existing implementation.
+		\item Updated code to prune X to work with general mean values.
+		\item Design algorithm to calculate $q_{0}$ from general mean values as the general algorithm appears to be much more complicated than the single paragraph given on the paper.  
+		\item Solve for $q_{0}$ entirely in MatLab and realize that the solution is slightly different from Wolfram Alpha.
+	\end{itemize}
+	 	
+\subsection{Week 14}
+	\begin{itemize}
+		\item Verify my implementation has errors and existing implementation of DMax function is correct. 
+		\item Found my bug and fixed it. Both implementations now outputs the same result. 
+		\item Plotted $DMax(q)$ function on Matlab, appears to be inconsistent with what the paper [1] has stated. $DMax(q)$ appears to be convex and not continuous whereas the paper claims that $DMax(q)$ is concave and derivable. This new fact means that the algorithm I developed from Week 13 is useless as the problem is now much simpler to solve due to its convex shape where the maximum must be at the end points of each interval.  
+		\item Documented work for Spread Constraint on \LaTeX. 
+	\end{itemize}
+
+\subsection{Week 15}
+	\begin{itemize}
+		\item Documented work for summary of my 15 weeks at TIDEL as well as my guide to reading research papers on \LaTeX. 
+		\item Upload all my code for TIDEL on CVS repository.
+		\item Emailed Prof. Pierre regarding the the inconsistency of my Matlab plot and he replied confirming that the plot is correct and the paper's claims of $DMax(q)$ being concave and derivable is incorrect as I discovered. 
+		\item Re-implemented the code based on the new fact about $DMax(q)$.  
+		\item Updated algorithm to prune both ways for $M(I_{q})$ and it appears to prune tighter than CP Optimizer. 
+		\item Finish implementing the Spread Constraint code for both 
+			specific and general mean on C++.
+		\item Transferred my implemented code to work with SCIP. 
+	\end{itemize}
+
+	 
+\section{Guide to reading research papers}
+	\begin{enumerate}
+		\item Print the paper out and write on it. By the time you are done 					 			  understanding the paper, it should be filled with hand written notes. 
+		\item Understand all definitions and notations first. If there are notations that are not explained in detail, look up other papers of the same author. Chances are, the author uses the same notations and explains them in more detail. 
+		\item If you do not understand a term, look it up immediately. 
+		\item If there is insufficient information presented, look up references and read them.
+		\item Keep track of reference recursions by renaming paper. 
+			 E.G. Paper A refers to Paper B at 16th reference, Paper B refers to Paper C at 3rd 				reference. Rename PaperA to Paper0, rename Paper B to Paper0t16, rename Paper C to 					Paper 0t16t3. 
+		\item To find the current state of the art methods, always google up papers that cites the paper you are currently reading. 
+		\item There may be multiple revisions of the exact same paper available online, some slightly more updated than the other. Make sure you download the most updated paper. 
+		\item If the date of publication is not given,
+		\begin{enumerate}
+			\item Look up author's website to check when the author published the paper. 
+			\item Google the paper's name up 
+			\item Look at the paper's references to see the most recent date of the paper it refers to. Then, you will get an idea of when this paper is published. 
+		\end{enumerate}
+		\item Look up authors of the paper to locate other relevant papers. 
+		\item If the paper explains an algorithm, the author may have already implemented the algorithm. Refer to their website for possible source code. 
+		\item Read available code to better understand the paper and vice versa. 
+		\item The algorithms presented on the paper are going to be difficult. Study it as if you were learning double rotations or quicksort for the first time. 
+	\end{enumerate}
+
+\section {References}
+\begin{enumerate}
+\item [1] Schaus, P., Deville, Y., Dupont, P., R´egin, J.: Simplification and extension of spread. 3d
+Workshop on Constraint Propagation And Implementation (2006)
+\item [2] N. Beldiceanu. Pruning for the minimum constraint family and for the Number of Distinct Values constraint family. In Proceedings CP-01, 2001.
+\item [3] C. Bessière, E. Hebrard, B. Hnich, Z. Kiziltan, T. Walsh, Filtering algorithms for the NValue constraint, Constraints 11 (4) (2006) 271–293
+
+
+\end{enumerate} 
+
+\end{document} % To end input file 
