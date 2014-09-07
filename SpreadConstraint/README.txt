@@ -5,7 +5,7 @@ read all the domain variables from SCIP, create a new problem using my code, sol
 into the domain variables from SCIP. 
 
 SpreadConstraint.m contains the code to calculate the second derivative of the complicated equation, 
-as well as graph the dmax(q) to show that it is convex and not continuous, whereas the paper's 
-incorrect claim states that dmax(q) is concave and continuous. 
+as well as graph the dmax(q) to show that it is not continuous, whereas the paper's 
+incorrect claim states that dmax(q) is continuous. 
 
 SpreadConstraint.tex contains the LaTeX code to generate the report that I have written 
