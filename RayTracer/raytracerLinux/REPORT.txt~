@@ -1,0 +1,169 @@
+A) Overall submission
+A.1) PART A:
+Ray casting
+A ray was constructed from the camera to the center of each pixel on the image plane, using a for loop. 
+You can view this in effect in the image 2partOneFullView.bmp 
+
+Sphere intersection
+First the incoming ray is converted to object space using the worldToModel matrix. The object space ray has to have x, y, and z components that satisfy the equation x(t)^2 + y(t)^2 + z(t)^2 = 1 for an intersection with the surface of the sphere. The parameter t is computed using a quadratic equation, and t is only valid if it is greater than 0 (intersection occurred ahead of the origin). In the case when there are 2 valid t values, the smaller one is taken as this marks the closest intersection to the origin of the ray. The normal is the radius, a vector from the origin (0,0,0) to the intersection point in object space. The t value, along with the intersection point (converted back to world space) and normal (transformed using the inverse of the modelToWorld matrix and normalized) are loaded into the input ray object.
+You can view this in effect in the image 2partOneFullView.bmp 
+
+Plane intersection
+The same conversion to object space is used. This time, a t-value is computed to see if the ray intersects the xy plane. The x(t) and y(t) are computed to see if it fits within the bounds of the square. If so, store the normal (0, 0, 1) and intersection point in world coordinates.
+You can view this in effect in the image 2partOneFullView.bmp 
+
+Phong shading
+This is all in lightsource.cpp, where if there is an intersection, pull out the ambient, diffuse, and specular components of the light source and the intersected material. Now the angles are computed like they were done in class to be used to determine the magnitude of the diffuse and specular components. Then the general Phong equation is used to compute the magnitude of the each of the RGB streams, ad these values are inserted back into the input ray->col.
+You can view this in effect in the image 2partOneFullView.bmp 
+
+Antialiasing
+This is done in raytracer.cpp by shooting a constant NUMANTIALIASE number of rays into random positions on the screen within +- 1 at each imagePlane coordinate. The color is gathered over these rays and divided by NUMANTIALIASE to average it out, and this is the one that the final color that is rendered.
+You can view this in effect in the image 2partOneFullView.bmp 
+
+A.2) PART B: 
+Perfect Shadow 
+This is done in computeShading() function in raytracer.cpp 
+As soon as an intersection occurs, we also check if the intersection is in shadow. This is done by shooting a ray from the intersection point to every light source,
+and check to see if it is in shadow from that light source. If the intersection point is shadow, the ray shot will intersect another object on its way to the light source. 
+If it is in shadow, we simply do not add the diffuse and specular components of the Phong model, leaving only the contribution from the ambient component of the Phong Model present. 
+You can view this in effect in the image 3PureShadowView.bmp 
+
+Perfect Reflection
+This is done recursively  computeShading() as well as PointLight::shade() function in raytracer.cpp and light_source.cpp. 
+For every light source, you shoot a ray towards the intersection point. Then, the reflected ray is calculated and shot again
+as if that intersection point was the original camera point or pixel. Then, the contribution from the reflected ray shot is added
+into the original intersection point. This is done recursively to allow multiply recursive reflection to take place. 
+A depth variable is introduced into the ray itself to ensure the recursive reflection stops after a certain number of recursive calls.  
+You can view this in effect in the image 4PureReflectionView.bmp 
+
+Soft Shadow
+Soft shadow is an upgrade to the Perfect Shadow. To implement a soft shadow, you need an area light source that projects onto the scene. 
+By doing so, the scene will contain some shadows that are darker than the other. 
+We implemented the area light by having a constant number of point lights at a very small point. To be exact, we have 6 point lights to represent 
+each head light. These 6 point lights are deviated slightly, each contributes a sixth of the total light emitted by the area light that is simulated. 
+upon normal PointLight contribution from the Phong Model, a soft shadow is generated. 
+You can view this in effect in the image 5SoftShadowView.bmp 
+
+Depth of Field
+The depth of field is implemented by simulating a focal length by adding an image plane at a certain focal length distance in front of the camera. 
+The image plane is computed by taking the cross product of the camera's up vector as well as view vector to get a new vector. This new vector combined with the 
+up vector of the camera allows us to create an image plane at a focal distance away from the camera/eye. Many rays are shot and the average is computed. 
+If the point is close to the focal length, each point contributes a similar amount, resulting in a clearer image. However, if the points are far from the focal length, 
+each ray contributes a largely different amount, resulting in a blur image. 
+You can view this in effect in the image 6DepthOfFieldView.bmp 
+Note: In 6DepthOfFieldView2.bmp, the entire scene is out of focus, however, 
+in 6DepthOfFieldView1.bmp, you can see that the spheres are in focus as it is closer to focal length whereas the plane is out of focus as it is further away from the focal length. 
+
+Texture Mapping
+Texture mapping is implemented in two different ways. 
+For the plane, a procedural texture mapping which depends on each point on the plane is used. As the point varies, the sine(point) value changes. 
+This change contributes differently to the colour of the plane. 
+For the sphere, an image texture mapping is used. The intersection points on the sphere is converted to the polar coordinates. 
+These polar coordinates are converted into a u and v variable, both ranging from 0 to 1. Upon multiplying the width of the picture, 
+each value of u and v will texture map the position on the sphere to a different point on the image that is being used to texture map. 
+The input image to texture map is an image of the globe and is called worldMap.bmp. 
+You can view these in effect in the image 7TextureMapView.bmp 
+
+Motion Blur
+Motion blur is implemented by continuously moving the object as the ray tracing is being done. 
+To be specific, we have two vectors, a vector to determine the colour at a certain pixel and a vector to determine the position of the sphere as a function of time. 
+The colour is influenced by the integration of the position of the sphere at that position. This is implemented by allowing the current pixel to contribute more energy 
+if it is at a location for a longer period of time and less energy at a location that it is present at a shorter period of time. 
+As a result, a motion blur effect is produced. 
+You can view this in effect in the image 8MotionBlurView.bmp
+
+Cylinder Intersection & Disk Intersection 
+A Disk intersection is done simply by checking if the point projected is within the radius of the disk. We also check to see if the 
+point is hitting the disk from the top or from the bottom. This is done by measuring a distance from the ray to a very small offset from the disk from top and below. 
+If it is closer to the top offset from the disk, we know the point is hitting from the top. Otherwise, we know the point is coming from the bottom. 
+This allows use to create the Disk Intersection. 
+The cylinder is basically two disks connected with the cylinder body. 
+The intersection is checked for each of these 3 components and the closest intersection is returned. 
+To know if it intersects the top and bottom disk, simply check to see if the intersection is closer to the bottom disk or the top disk within the radius of the disk. 
+If the intersection does not occur, then check for intersection with the body of the cylinder. The body of cylinder is defined by the equations. If it intersects, 
+we need to ensure the intersection happens within the height of the cylinder. 
+You can view this in effect in the image 9CylinderDiskView.bmp
+
+Glossy Reflection 
+Glossy Reflection is implemented by similar to perfect reflection. However, instead of shooting one reflected ray, we shoot many reflected rays 
+that are at a random small distance away from the original reflected way and compute its average. The resultant is a glossy reflection.  
+You can view this in effect in the image 10GlossyReflectionView.bmp
+
+Animation
+To be submitted, it takes a long time to render. 
+We basically code program to output continuous images with value. 
+We will then insert all the images into a bmp to video commercial software available
+to turn the 60 images per second into an animated video. We have created a short animation to be showed to the T.A at a later date. 
+
+B) Program and other file structures
+No additional files were used. Although we did modify existing files to include extra parameters such as boolean to check if an object should be texture mapped, 
+as well as the center of the object that belongs to the intersection point during ray casting. 
+We wrote our code such that a user (Teaching Assistant) can use it easily. All the user has to do is navigate to the top of 
+raytracer.cpp file, and uncomment one of the define headers. To illustrate, the code below shows that the code will run the motion blur effect when compiled and run. 
+
+// Note: Uncomment if want them, note: must only uncomment one of these at a time 
+//#define SIGNATURE 1	// only ambient components 
+//#define PARTONEFULL 1 	// has antialias, without shadows 
+//#define SHADOW 1 // normal shadow (compulsory)
+//#define REFLECTION 1 // specular perfect reflection (compulsory) 
+//#define SOFTSHADOW 1 // demonstrates soft shadows
+//#define DEPTHOFFIELD 1 // demonstrates use of depth of field with 30 antialiasing (2 minute compile per pic)
+//#define TEXTUREMAPPINGSPHERE 1 // texture image map sphere and texture procedural map plane 
+#define MOTIONBLUR 1
+//#define CYLINDERDRAW 1 // includes both blue cylinder and purple disk 
+//#define GLOSSYREFLECTION 1 
+//#define FULLEVERYTHING 1 // takes few hours compile time 
+
+This allows ease of use and allows the user as well as T.A. to easily check our work on each output. 
+
+C) What implemented & external resources used
+C.1) Implemented: 
+Ray Casting
+Intersection Code for Ray-Sphere Intersection 
+Intersection code for Ray-Square Intersection 
+Phong Shading for Point Light Sources
+Anti-Aliasing
+Animation 
+Perfect Shadow 
+Report
+Perfect Reflection 
+Soft Shadow
+Depth of Field
+Texture Mapping
+Motion Blur
+Intersection Code for Ray-Disk Intersection
+Intersection Code for Ray-Cylinder Intersection
+Glossy Reflection
+Animation (To be submitted, still under render) 
+
+C.2) External Resources:
+Fundamentals of Computer Graphics by Shirley (Course textbook): It includes the knowledge of how to implement majority of the parts of this program. 
+Depth of Field Pseudocode: http://ray-tracer-concept.blogspot.ca/2011/12/depth-of-field.html
+Ray-Cylinder Intersection Pseudocode: http://tog.acm.org/resources/GraphicsGems/gemsiv/ray_cyl.c
+				      http://www.csie.ntu.edu.tw/~cyy/courses/rendering/pbrt-2.00/html/cylinder_8cpp_source.html
+
+D) Role of Each Member on the Project
+D.1) Vivian Liu Chu Wei
+Ray Casting
+Intersection Code for Ray-Sphere Intersection 
+Intersection code for Ray-Square Intersection 
+Phong Shading for Point Light Sources
+Anti-Aliasing 
+Animation 
+Perfect Shadow 
+Report
+
+D.2) Soon Chee Loong
+Fixed bug for view being independent of eye position. 
+Fixed bug for Intersection code for Ray-Square Intersection 
+Improve Anti-Aliasing
+Perfect Reflection 
+Soft Shadow
+Depth of Field
+Texture Mapping
+Motion Blur
+Intersection Code for Ray-Disk Intersection
+Intersection Code for Ray-Cylinder Intersection
+Glossy Reflection
+Coding Style: Added header to easily navigate between modes during compilation 
+Report 
