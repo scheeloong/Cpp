@@ -358,7 +358,7 @@ Raytracer::~Raytracer() {
 // Adding Scene Objects to the Directed Acyclic Graph 
 //----------------------------------------------------------------------------------------------------------
 // This is a method from RayTracer but returns a node instead
-SceneDagNode* Raytracer::addObject( SceneDagNode* parent, SceneObject* obj, Material* mat ) 
+SceneDagNode* Raytracer::addObject(SceneDagNode* parent, SceneObject* obj, Material* mat) 
 {
 	// Once Raytracer is created, root points to a created object, thus, parent points to that object 
 
@@ -403,14 +403,14 @@ LightListNode* Raytracer::addLightSource(LightSource* light) {
 	return _lightSource; // return head of the linked list
 }
 
-LightListNode* Raytracer::addHeadLightSource(double posX, double posY, double posZ, double colorX, double colorY, double colorZ ) {
+LightListNode* Raytracer::addHeadLightSource(double posX, double posY, double posZ, double colorX, double colorY, double colorZ) {
 headLightPresent = true; 
     // 6 positions for positive and negative offsets in X, Y, Z directions.
 	this->addLightSource(new PointLight(Point3D(posX + OFFSET, posY, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
 	this->addLightSource(new PointLight(Point3D(posX - OFFSET, posY, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
 	this->addLightSource(new PointLight(Point3D(posX, posY + OFFSET, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
 	this->addLightSource(new PointLight(Point3D(posX, posY - OFFSET, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
-	this->addLightSource(new PointLight(Point3D(posX, posY , posZ + OFFSET ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
+	this->addLightSource(new PointLight(Point3D(posX, posY , posZ + OFFSET), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
 	this->addLightSource(new PointLight(Point3D(posX, posY , posZ - OFFSET), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
 	return _lightSource; // return the head of the linked list 
 }
@@ -464,7 +464,7 @@ void Raytracer::rotate(SceneDagNode* node, char axis, double angle) {
 	}
 }
 
-void Raytracer::translate( SceneDagNode* node, Vector3D trans ) {
+void Raytracer::translate(SceneDagNode* node, Vector3D trans) {
 	// A temporary matrix to store the information for translation and it's inverse
 	// Node => The SceneDagNode that stores the SceneObject and material properties
 		// as well as all the transformation it has to be multiplied into 
@@ -483,7 +483,7 @@ void Raytracer::translate( SceneDagNode* node, Vector3D trans ) {
 	node->invtrans = translation * node->invtrans; 
 }
 
-void Raytracer::scale( SceneDagNode* node, Point3D origin, double factor[3] ) {
+void Raytracer::scale(SceneDagNode* node, Point3D origin, double factor[3]) {
 	// Create a matrix called scale to hold A 
 	Matrix4x4 scale;
 	
@@ -557,7 +557,7 @@ void Raytracer::computeShading(Ray3D& ray)
 		bool isInShadow = false;
 		
 		Point3D lightPos = curLight->light->get_position();
-		if(ray.intersection.none == false) 
+		if (ray.intersection.none == false) 
 		{
 			// Construct a ray from intersection point on ray to light source
 			Point3D intersectPos = ray.intersection.point;
@@ -578,11 +578,11 @@ void Raytracer::computeShading(Ray3D& ray)
 			traverseScene(_root, shadowRay);
 		
 			// Check if light intersects at intersectPos on object, if not then it's in shadow 
-			if(shadowRay.intersection.none == false) 
+			if (shadowRay.intersection.none == false) 
 			{
 				//double t_light = (lightPos[0] - shadowRay.origin[0]) / shadowRay.dir[0];
 				Point3D shadowRayIntersect = shadowRay.intersection.point;
-				if( shadowRay.intersection.t_value >= epsilon &&   shadowRay.intersection.t_value<= 1-epsilon)
+				if (shadowRay.intersection.t_value >= epsilon &&   shadowRay.intersection.t_value<= 1-epsilon)
 				{
 					isInShadow = true; 
 				}
@@ -611,14 +611,14 @@ void Raytracer::computeShading(Ray3D& ray)
 
 				// Update colour of current ray (take into account lose of energy each time) 
 				double numLightsTemp = 1; 
-				if(headLightPresent) numLightsTemp =  NUMLIGHTS; 
+				if (headLightPresent) numLightsTemp =  NUMLIGHTS; 
 				ray.col[0] += colTwo[0]/((RAYDEPTH - reflectRay.depth)*numLightsTemp); // need divide by remaining depth of recursion each time to lose energy 
 				ray.col[1] += colTwo[1]/((RAYDEPTH - reflectRay.depth)*numLightsTemp); 
 				ray.col[2] += colTwo[2]/((RAYDEPTH - reflectRay.depth)*numLightsTemp); 
 				ray.col.clamp();
 */
 		}
-		if(NOSHADOW == 1) isInShadow = false; // always make it not in shadow 
+		if (NOSHADOW == 1) isInShadow = false; // always make it not in shadow 
 		curLight->light->shade(ray, isInShadow, ONLYAMBIENT, DOTEXTUREMAPSPHERE);
 		curLight = curLight->next;
 	}
@@ -645,7 +645,7 @@ void Raytracer::computeShading(Ray3D& ray)
 		if ((rand() % 10) > 4) rng2*= -1; // deduct instead 
 		if ((rand() % 10) > 4) rng3*= -1; // deduct instead 
 		// only do glossy if NUMGLOSSY is more than 1, else do perfect 
-		if(NUMGLOSSY > 1)
+		if (NUMGLOSSY > 1)
 		{
 			// Add a small random offset to r 
 			r[0] += rng1; 	
@@ -683,7 +683,7 @@ void Raytracer::computeShading(Ray3D& ray)
 	// pg 103/785 in pdf 
 	// Option 2: Multiply with specular reflection to lose energy instead of the reflect ray 
 /*
-	if(reflectRay.intersection.none == false) 
+	if (reflectRay.intersection.none == false) 
 	{
 		Vector3D l2 = Vector3D(reflectRay.origin - reflectRay.intersection.point);
  //l2 = l; // TEMP
@@ -710,7 +710,7 @@ void Raytracer::computeShading(Ray3D& ray)
 //----------------------------------------------------------------------------------------------------------
 
 // This initializes the view matrix based on the position, direction and orientation of the eye/camera . 
-Matrix4x4 Raytracer::initInvViewMatrix( Point3D eye, Vector3D view, Vector3D up) 
+Matrix4x4 Raytracer::initInvViewMatrix(Point3D eye, Vector3D view, Vector3D up) 
 {
 	// Create a 4by4 matrix 
 	Matrix4x4 mat; 
@@ -774,10 +774,10 @@ void Raytracer::initPixelBuffer()
 
 // Helper Function called by render() 
 // This flushes the pixel buffer by writing it onto the bmp file, and then deleting all the buffers for thsi ray tracer 
-void Raytracer::flushPixelBuffer( char *file_name ) 
+void Raytracer::flushPixelBuffer(char *file_name) 
 {
 	// Note: Change this function if you want to write to an image with a different format or something else (VGA Screen, etc.) 
-	bmp_write( file_name, _scrWidth, _scrHeight, _rbuffer, _gbuffer, _bbuffer );
+	bmp_write(file_name, _scrWidth, _scrHeight, _rbuffer, _gbuffer, _bbuffer);
 	delete _rbuffer;
 	delete _gbuffer;
 	delete _bbuffer;
@@ -810,7 +810,7 @@ Colour Raytracer::shadeRay(Ray3D& ray)
 //----------------------------------------------------------------------------------------------------------
 
 // This function renders the entire scene once it is done being set up. 
-void Raytracer::render( int width, int height, Point3D eye, Vector3D view, Vector3D up, double fov, char* fileName, SceneDagNode* node  ) 
+void Raytracer::render(int width, int height, Point3D eye, Vector3D view, Vector3D up, double fov, char* fileName, SceneDagNode* node) 
 {
 	// Create a matrix called view to world 
 	Matrix4x4 viewToWorld;
@@ -830,7 +830,7 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view, Vecto
 	
 	int numMotion = 0; 
 	int limit = 0; 
-	if(DOMOTIONBLUR == 1) 
+	if (DOMOTIONBLUR == 1) 
 	{
 		numMotion = NUMMOTIONBLUR; // execute normally if no motion blur 
 		limit = 1; 
@@ -890,7 +890,7 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view, Vecto
 					Point3D pointAimed; // for depth of field (depends on focal length) 
 					Point3D start = eye; // initialize
 				// If need to do depth of field 
-				if(DODEPTHOFFIELD == 1) 
+				if (DODEPTHOFFIELD == 1) 
 				{
 					rayDir = viewToWorld * rayDir;
 					// normalize the ray direction 
@@ -954,13 +954,13 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view, Vecto
 				_bbuffer[i*width+j] += int(col[2]*255)/(double)pow(2.0,lkj);;
 			}
 		}
-		if(DOMOTIONBLUR == 1)
+		if (DOMOTIONBLUR == 1)
 		{
 			// move the sphere
 			this->translate(node, Vector3D(0, 0.5 , 0));	
 		}
 	} 		// MOTION BLUR 
-	if(DOMOTIONBLUR == 1)
+	if (DOMOTIONBLUR == 1)
 	{
 		// Reset the sphere to original position. 
 		this->translate(node, Vector3D(0, -0.5*numMotion , 0));	
@@ -1003,59 +1003,62 @@ int main(int argc, char* argv[])
 		height = atoi(argv[2]);
 	}
 
-//-------------------------------------------------------------------------------------
-if(DOTEXTUREMAPSPHERE == 1)
-{
-	// For texture map, the buffers are defined globally  
-	// Initialize the buffers 
-	int numbytesTextureMap = width * height * sizeof(unsigned char);
-	rbuffer = new unsigned char[numbytesTextureMap];
-	gbuffer = new unsigned char[numbytesTextureMap];
-	bbuffer = new unsigned char[numbytesTextureMap];
-	for (int i = 0; i < height; i++) 
-	{
-		for (int j = 0; j < width; j++) 
-		{
-			rbuffer[i*width+j] = 0;
-			gbuffer[i*width+j] = 0;
-			bbuffer[i*width+j] = 0;
-		}
-	}
-	int temp1 = width;
-	int temp2 = height; 
-	long unsigned int* widthTextureMap = new long unsigned int(width);
-	long int* heightTexturemap = new long int(height); 
-	bmp_read("worldMap.bmp", widthTextureMap, heightTexturemap, &rbuffer, &gbuffer, &bbuffer); 
-	std::cout <<" Finished reading: " << "worldMap.bmp" << std::endl; 
-	unsigned char* _rbuffer;
-	unsigned char* _gbuffer;    				
-	unsigned char* _bbuffer;
-	// test to see if data is correct
-	_rbuffer = new unsigned char[numbytesTextureMap];
-	_gbuffer = new unsigned char[numbytesTextureMap];
-	_bbuffer = new unsigned char[numbytesTextureMap];
-	for (int i = 0; i < height; i++) 
-	{
-		for (int j = 0; j < width; j++) 
-		{
-			_rbuffer[i*width+j] = (rbuffer[i*width+j]) ;
-			_gbuffer[i*width+j] = (gbuffer[i*width+j]);
-			_bbuffer[i*width+j] = (bbuffer[i*width+j]);
-		}
-	}
-	bmp_write( "output.bmp", width, height, _rbuffer, _gbuffer, _bbuffer );
-	delete _rbuffer;
-	delete _gbuffer;
-	delete _bbuffer;
-}// end of if statement for texture map
+    //-------------------------------------------------------------------------------------
+    if (DOTEXTUREMAPSPHERE == 1)
+    {
+        // For texture map, the buffers are defined globally  
+        // Initialize the buffers 
+        int numbytesTextureMap = width * height * sizeof(unsigned char);
+        rbuffer = new unsigned char[numbytesTextureMap];
+        gbuffer = new unsigned char[numbytesTextureMap];
+        bbuffer = new unsigned char[numbytesTextureMap];
+        for (int i = 0; i < height; i++) 
+        {
+            for (int j = 0; j < width; j++) 
+            {
+                rbuffer[i*width+j] = 0;
+                gbuffer[i*width+j] = 0;
+                bbuffer[i*width+j] = 0;
+            }
+        }
+        int temp1 = width;
+        int temp2 = height; 
+        long unsigned int* widthTextureMap = new long unsigned int(width);
+        long int* heightTexturemap = new long int(height); 
+        // Read the texture map input image
+        bmp_read("worldMap.bmp", widthTextureMap, heightTexturemap, &rbuffer, &gbuffer, &bbuffer); 
+        std::cout <<" Finished reading: " << "worldMap.bmp" << std::endl; 
+        unsigned char* _rbuffer;
+        unsigned char* _gbuffer;    				
+        unsigned char* _bbuffer;
+        // test to see if data is correct
+        _rbuffer = new unsigned char[numbytesTextureMap];
+        _gbuffer = new unsigned char[numbytesTextureMap];
+        _bbuffer = new unsigned char[numbytesTextureMap];
+        for (int i = 0; i < height; i++) 
+        {
+            for (int j = 0; j < width; j++) 
+            {
+                _rbuffer[i*width+j] = (rbuffer[i*width+j]) ;
+                _gbuffer[i*width+j] = (gbuffer[i*width+j]);
+                _bbuffer[i*width+j] = (bbuffer[i*width+j]);
+            }
+        }
+        // Write the texture map output buffer 
+        // note: No algorithm done here, just to ensure reading and writing works
+        bmp_write("output.bmp", width, height, _rbuffer, _gbuffer, _bbuffer);
+        delete _rbuffer;
+        delete _gbuffer;
+        delete _bbuffer;
+    }// end of if statement for texture map
 
-// Here, successfully read texture map into:
-// rbuffer
-// gbuffer
-// bbuffer 
+    // Here, successfully read texture map into:
+    // rbuffer
+    // gbuffer
+    // bbuffer 
 
-//-------------------------------------------------------------------------------------
-// Continue program as usual 
+    //-------------------------------------------------------------------------------------
+    // Continue program as usual 
 	// Camera parameters.
 	Point3D eye(0, 0, 1);
 	Vector3D view(0, 0, -1);
@@ -1066,200 +1069,199 @@ if(DOTEXTUREMAPSPHERE == 1)
 	//-----------------------------------------------------------------------------------------------------------
 	// Step2 : Add Light Sources and Scene Objects into the scene 
 	//-----------------------------------------------------------------------------------------------------------
-
 	// Create materials with AmbientColor, DiffuseColor, SpecularcColor, and SpecularExponent 
 	// Note: Material is used for shading 
 	// Material 1: Gold
-	Material gold( Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648), Colour(0.628281, 0.555802, 0.366065), 51.2, DOTEXTUREMAPSPHERE); // 1 => sphere does texture map 
-	//Material gold( Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648), Colour(0.628281, 0.555802, 0.366065), 1); // Test: Material with lower exponent 
+	Material gold(Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648), Colour(0.628281, 0.555802, 0.366065), 51.2, DOTEXTUREMAPSPHERE); // 1 => sphere does texture map 
+	//Material gold(Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648), Colour(0.628281, 0.555802, 0.366065), 1); // Test: Material with lower exponent 
 	// Material 2: Jade
 	int tempJade = 0; 
 	if (DOTEXTUREMAPSPHERE == 1) tempJade = 2; 
-	Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), Colour(0.316228, 0.316228, 0.316228), 12.8 , tempJade); // 0 => No texture map 
-
-	//	Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), Colour(0.316228, 0.316228, 0.316228), 1 );	
-
-	Material mud( Colour(0.6, 0.0, 0.0), Colour(0.75164, 0.60648, 0.22648),Colour(0.628281, 0.555802, 0.366065),32.2, 0);
+	Material jade(Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), Colour(0.316228, 0.316228, 0.316228), 12.8 , tempJade); // 0 => No texture map 
+	//	Material jade(Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), Colour(0.316228, 0.316228, 0.316228), 1);	
+	Material mud(Colour(0.6, 0.0, 0.0), Colour(0.75164, 0.60648, 0.22648), Colour(0.628281, 0.555802, 0.366065), 32.2, 0);
 
 	// Material for the cylinder 
-	Material cylMat( Colour(0.0, 0.0, 0.6), Colour(0.75164, 0.60648, 0.22648),Colour(0.628281, 0.555802, 0.366065),32.2, 0);
+	Material cylMat(Colour(0.0, 0.0, 0.6), Colour(0.75164, 0.60648, 0.22648), Colour(0.628281, 0.555802, 0.366065), 32.2, 0);
+
 	// Material for the disk
-	Material diskMat( Colour(0.5, 0.0, 0.5), Colour(0.75164, 0.60648, 0.22648),Colour(0.628281, 0.555802, 0.366065),32.2, 0);
+	Material diskMat(Colour(0.5, 0.0, 0.5), Colour(0.75164, 0.60648, 0.22648), Colour(0.628281, 0.555802, 0.366065), 32.2, 0);
 
 	// NOTE: Can only use HeadLight or Light Source but not both! 
-	if(HEADLIGHTS==1)
+	if (HEADLIGHTS==1)
 	{
 		// Note: Below takes way longer with reflection implemented 
-	//	raytracer.addHeadLightSource( -5, 0, 0, 0.9, 0.9, 0.9); 
-		raytracer.addHeadLightSource( 5, 0, 0, 0.9, 0.9, 0.9);
+	//	raytracer.addHeadLightSource(-5, 0, 0, 0.9, 0.9, 0.9); 
+		raytracer.addHeadLightSource(5, 0, 0, 0.9, 0.9, 0.9);
 	}
 
 	else
 	{
-		// Defines a point light source with location in 3D as well as the color of the light.  (closed to white) 
+		// Defines a point light source with location in 3D as well as the color of the light. (close to white) 
 		// Add the point light source to the ray tracer's list of lightSource 
-	//	raytracer.addLightSource( new PointLight(Point3D(-5, 0, 0), Colour(0.9, 0.9, 0.9)));
-		raytracer.addLightSource( new PointLight(Point3D(5, 0, 0), Colour(0.9, 0.9, 0.9)));
+	    // raytracer.addLightSource(new PointLight(Point3D(-5, 0, 0), Colour(0.9, 0.9, 0.9)));
+		raytracer.addLightSource(new PointLight(Point3D(5, 0, 0), Colour(0.9, 0.9, 0.9)));
 	}
-	// raytracer.addLightSource( new PointLight(Point3D(5, 0, 0), Colour(0.4, 0.4, 0.4))); // Test: Darker light source 
-
+	// raytracer.addLightSource(new PointLight(Point3D(5, 0, 0), Colour(0.4, 0.4, 0.4))); // Test: Darker light source 
 	// Need associate created material with objects 
 	// Adding actual objects to world  (known as SceneObject) 
-
 	// Add a unit square into the scene with material mat
 	// Note: It is pointer that points to objects created and returned by raytracer 
 						// (SceneObject, Material) 
-	SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
-	SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
+	SceneDagNode* sphere = raytracer.addObject(new UnitSphere(), &gold);
+	SceneDagNode* plane = raytracer.addObject(new UnitSquare(), &jade);
 
 	// now root has 2 childs, both the unitSphere and the unitSquare 
 	// but really it is
 	// root->child->Sphere
 	// root->Sphere->next->plane
-// If don't do animation 
-if(DOANIMATION == 0) 
-{	
-	//-----------------------------------------------------------------------------------------------------------
-	// Step3 : Apply transformation to the objects to put them in place 
-	//-----------------------------------------------------------------------------------------------------------
-	// Apply some transformations to the unit square.
+    
+    // If don't do animation 
+    if (DOANIMATION == 0) 
+    {	
+        //-----------------------------------------------------------------------------------------------------------
+        // Step3 : Apply transformation to the objects to put them in place 
+        //-----------------------------------------------------------------------------------------------------------
+        // Apply some transformations to the unit square.
 
-	// Create a factor for scaling (ScaleX, ScaleY, ScaleZ) 
-	double factor1[3] = { 1.0, 2.0, 1.0 };
-	double factor2[3] = { 6.0, 6.0, 6.0 };
-	double factor3[3] = { 1.0, 1.0, 1.0 };
-	double factor4[3] = { 0.25, 0.25, 0.25 };
-	// NEW QUADRIC SURFACE 
-	if (DRAWCYLINDER == 1)
-	{
-		SceneDagNode* cylinder = raytracer.addObject( new UnitCylinder(), &cylMat );
-		raytracer.translate(cylinder, Vector3D(-2,-2,-5));
-		raytracer.scale(cylinder, Point3D(0,0,0), factor3);
+        // Create a factor for scaling (ScaleX, ScaleY, ScaleZ) 
+        double factor1[3] = { 1.0, 2.0, 1.0 };
+        double factor2[3] = { 6.0, 6.0, 6.0 };
+        double factor3[3] = { 1.0, 1.0, 1.0 };
+        double factor4[3] = { 0.25, 0.25, 0.25 };
+        // NEW QUADRIC SURFACE 
+        if (DRAWCYLINDER == 1)
+        {
+            SceneDagNode* cylinder = raytracer.addObject(new UnitCylinder(), &cylMat);
+            raytracer.translate(cylinder, Vector3D(-2,-2,-5));
+            raytracer.scale(cylinder, Point3D(0,0,0), factor3);
 
-		// only draw disk if no glossy 		
-		if(NUMGLOSSY <= 1)
-		{
-			SceneDagNode* disk = raytracer.addObject( new UnitDisk(), &diskMat );
-			raytracer.translate(disk, Vector3D(-1,1,-2));
-			raytracer.scale(disk, Point3D(0,0,0), factor4);
-		}
-	}
-	// Do transformations on sphere 
-	// Add the translation matrix to the sphere's list of transformation and inverse transformation 
-	raytracer.translate(sphere, Vector3D(0, 0, -5));	
-	// Similarly, add rotations and scaling 
-	raytracer.rotate(sphere, 'x', -45); 
-	raytracer.rotate(sphere, 'z', 45); 
-	if (SCALESPHERE == 1 && DOMOTIONBLUR == 0)	raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
-	if(ONLYPARTONE != 1)
-	{
-		SceneDagNode* sphereTwo = raytracer.addObject( new UnitSphere(), &mud );
-		// Add the translation matrix to the sphere's list of transformation and inverse transformation 
-		raytracer.translate(sphereTwo, Vector3D(2, 2, -5));	
-		// Similarly, add rotations and scaling 
-		raytracer.rotate(sphereTwo, 'x', -30); 
-		raytracer.rotate(sphereTwo, 'z', 25); 
-		if (SCALESPHERE == 1)raytracer.scale(sphereTwo, Point3D(0, 0, 0), factor1);
-	}
- 	if(DOMOTIONBLUR == 1) raytracer.scale(sphere, Point3D(0, 0, 0), factor3);
-	// Similarly, do transformations on the plane 
-	raytracer.translate(plane, Vector3D(0, 0, -7));	
-	raytracer.rotate(plane, 'z', 45); 
-	raytracer.scale(plane, Point3D(0, 0, 0), factor2);
-}
-// Do animation 
-else
-{
-	double factorPlane[3] = {10, 10, 10};
-	double factorSphere[3] = {1, 1, 1};
-	double factorCyl[3] = { 0.5, 1, 0.5 };
-	SceneDagNode* cylinder = raytracer.addObject( new UnitCylinder(), &cylMat );
+            // only draw disk if no glossy 		
+            if (NUMGLOSSY <= 1)
+            {
+                SceneDagNode* disk = raytracer.addObject(new UnitDisk(), &diskMat);
+                raytracer.translate(disk, Vector3D(-1,1,-2));
+                raytracer.scale(disk, Point3D(0,0,0), factor4);
+            }
+        }
+        // Do transformations on sphere 
+        // Add the translation matrix to the sphere's list of transformation and inverse transformation 
+        raytracer.translate(sphere, Vector3D(0, 0, -5));	
+        // Similarly, add rotations and scaling 
+        raytracer.rotate(sphere, 'x', -45); 
+        raytracer.rotate(sphere, 'z', 45); 
+        if (SCALESPHERE == 1 && DOMOTIONBLUR == 0)	raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
+        if (ONLYPARTONE != 1)
+        {
+            SceneDagNode* sphereTwo = raytracer.addObject(new UnitSphere(), &mud);
+            // Add the translation matrix to the sphere's list of transformation and inverse transformation 
+            raytracer.translate(sphereTwo, Vector3D(2, 2, -5));	
+            // Similarly, add rotations and scaling 
+            raytracer.rotate(sphereTwo, 'x', -30); 
+            raytracer.rotate(sphereTwo, 'z', 25); 
+            if (SCALESPHERE == 1)raytracer.scale(sphereTwo, Point3D(0, 0, 0), factor1);
+        }
+        if (DOMOTIONBLUR == 1) raytracer.scale(sphere, Point3D(0, 0, 0), factor3);
+        // Similarly, do transformations on the plane 
+        raytracer.translate(plane, Vector3D(0, 0, -7));	
+        raytracer.rotate(plane, 'z', 45); 
+        raytracer.scale(plane, Point3D(0, 0, 0), factor2);
+    }
+    // Do animation 
+    else
+    {
+        double factorPlane[3] = {10, 10, 10};
+        double factorSphere[3] = {1, 1, 1};
+        double factorCyl[3] = { 0.5, 1, 0.5 };
+        SceneDagNode* cylinder = raytracer.addObject(new UnitCylinder(), &cylMat);
 
-	// Do transformations on the plane 
-	/*raytracer.translate(plane, Vector3D(0, 0, -5));	
-	raytracer.rotate(plane, 'x', -90);
-	raytracer.scale(plane, Point3D(0, 0, 0), factorPlane);*/
-	raytracer.translate(plane, Vector3D(0, 0, -7));	
-	raytracer.rotate(plane, 'z', 45); 
-	raytracer.scale(plane, Point3D(0, 0, 0), factorPlane);
+        // Do transformations on the plane 
+        /*raytracer.translate(plane, Vector3D(0, 0, -5));	
+        raytracer.rotate(plane, 'x', -90);
+        raytracer.scale(plane, Point3D(0, 0, 0), factorPlane);*/
+        raytracer.translate(plane, Vector3D(0, 0, -7));	
+        raytracer.rotate(plane, 'z', 45); 
+        raytracer.scale(plane, Point3D(0, 0, 0), factorPlane);
 
-	// Transform Sphere
-	raytracer.translate(sphere, Vector3D(-2, 1.5, -5));	
-	raytracer.rotate(sphere, 'x', -45); 
-	raytracer.rotate(sphere, 'z', 45); 
-		
-	// Transform Cylinder		
-	raytracer.translate(cylinder, Vector3D(-2, 0.5, -5));
-	raytracer.scale(cylinder, Point3D(0,0,0), factorCyl);
+        // Transform Sphere
+        raytracer.translate(sphere, Vector3D(-2, 1.5, -5));	
+        raytracer.rotate(sphere, 'x', -45); 
+        raytracer.rotate(sphere, 'z', 45); 
+            
+        // Transform Cylinder		
+        raytracer.translate(cylinder, Vector3D(-2, 0.5, -5));
+        raytracer.scale(cylinder, Point3D(0,0,0), factorCyl);
 
-	// Transform Sphere
-	raytracer.translate(sphere, Vector3D(-3, 1.5, -7));	
-	raytracer.rotate(sphere, 'x', -45); 
-	raytracer.rotate(sphere, 'z', 45); 
-		
-	// Transform Cylinder		
-	raytracer.translate(cylinder, Vector3D(-3, 0.5, -7));
-	raytracer.scale(cylinder, Point3D(0,0,0), factorCyl);
-}
+        // Transform Sphere
+        raytracer.translate(sphere, Vector3D(-3, 1.5, -7));	
+        raytracer.rotate(sphere, 'x', -45); 
+        raytracer.rotate(sphere, 'z', 45); 
+            
+        // Transform Cylinder		
+        raytracer.translate(cylinder, Vector3D(-3, 0.5, -7));
+        raytracer.scale(cylinder, Point3D(0,0,0), factorCyl);
+    }
 	//---------------------------------------------------------------------------------------------------------------
 	// Step 4: Render the scene given the width, height, camera location, orientation, frame of view, and direction
 	//---------------------------------------------------------------------------------------------------------------
 	// Render the scene, feel free to make the image smaller for testing purposes.	
-	// Note: Render creates and flushes the pixel buffer in 2 different functions (it creates the pixel buffer in render() and flushes it in flushPixelBuffer() that is called by render() 
-// If don't do animation 
-if(DOANIMATION == 0)
-{
-	raytracer.render(width, height, eye, view, up, fov, "view1.bmp", sphere);	// output the image with name view1.bmp
-	
-	std::cout << "View1.bmp done" << std::endl; 
-	// Render it from a different point of view.
-	Point3D eye2(4, 2, 1);
-	Vector3D view2(-4, -2, -6);
-	//Point3D eye2(2, 0, 1);
-	//Vector3D view2(0, 0, -1);
-	raytracer.render(width, height, eye2, view2, up, fov, "view2.bmp", sphere);	// output the image with name view2.bmp 
+	// Note: Render creates and flushes the pixel buffer in 2 different functions 
+    //       (it creates the pixel buffer in render() and flushes it in flushPixelBuffer() that is called by render() 
+ 
+    // If don't do animation 
+    if (DOANIMATION == 0)
+    {
+        raytracer.render(width, height, eye, view, up, fov, "view1.bmp", sphere);	// output the image with name view1.bmp
+        
+        std::cout << "View1.bmp done" << std::endl; 
+        // Render it from a different point of view.
+        Point3D eye2(4, 2, 1);
+        Vector3D view2(-4, -2, -6);
+        //Point3D eye2(2, 0, 1);
+        //Vector3D view2(0, 0, -1);
+        raytracer.render(width, height, eye2, view2, up, fov, "view2.bmp", sphere);	// output the image with name view2.bmp 
 
-	std::cout << "View2.bmp done" << std::endl; 
-	Point3D eye3(-1, 0, 0);
-	Vector3D view3(1, 0, -1);
-	raytracer.render(width, height, eye3, view3, up, fov, "view3.bmp", sphere);	// output the image with name
-	std::cout << "View3.bmp done" << std::endl; 
-	Point3D eye4(-2, 0, -6);
-	Vector3D view4(1, 0, 0);
-	raytracer.render(width, height, eye4, view4, up, fov, "view4.bmp", sphere);	// output the image with name
-	std::cout << "View4.bmp done" << std::endl; 
+        std::cout << "View2.bmp done" << std::endl; 
+        Point3D eye3(-1, 0, 0);
+        Vector3D view3(1, 0, -1);
+        raytracer.render(width, height, eye3, view3, up, fov, "view3.bmp", sphere);	// output the image with name
+        std::cout << "View3.bmp done" << std::endl; 
+        Point3D eye4(-2, 0, -6);
+        Vector3D view4(1, 0, 0);
+        raytracer.render(width, height, eye4, view4, up, fov, "view4.bmp", sphere);	// output the image with name
+        std::cout << "View4.bmp done" << std::endl; 
 
-}
-// Do animation
-else
-{
-		//Point3D eyeAnim(3, 1, 0);
-		//Vector3D viewAnim(-2, 0, -1);
-		//raytracer.render(width, height, eyeAnim, viewAnim, up, fov, "anim.bmp", sphere);	// output the image with name view1.bmp
+    }
+    // Do animation
+    else
+    {
+            //Point3D eyeAnim(3, 1, 0);
+            //Vector3D viewAnim(-2, 0, -1);
+            //raytracer.render(width, height, eyeAnim, viewAnim, up, fov, "anim.bmp", sphere);	// output the image with name view1.bmp
 
-		// Animation parameters
-		const int NUM_FRAMES = 1;
-		const int TRAVEL_DISTANCE = 10;
-		const int NUM_LIGHTS = 2;
-		const int LIGHT_HEIGHT = 10;
-		const int CAM_SPEED = 0.1;
-		char buffer[50]; // for keeping numbers of image names
-		Point3D curEye;
+            // Animation parameters
+            const int NUM_FRAMES = 1;
+            const int TRAVEL_DISTANCE = 10;
+            const int NUM_LIGHTS = 2;
+            const int LIGHT_HEIGHT = 10;
+            const int CAM_SPEED = 0.1;
+            char buffer[50]; // for keeping numbers of image names
+            Point3D curEye;
 
-	// FLYING THROUGH TEETH
-	for(int i = 0; i < NUM_FRAMES; i++) {   
-		// Move teeth together
- 		
-		snprintf(buffer, sizeof(buffer), "%d%s", i, ".bmp");
-		//raytracer.render(width, height, overViewEye, overViewView, overViewUp, overViewFOV, buffer, sphere);
-		raytracer.render(width, height, curEye, view, up, fov, buffer, sphere);
-		curEye[0] -= CAM_SPEED;
-		curEye[1] -= CAM_SPEED;
-		std::cout << buffer << " done" << std::endl; 
-	}
-	
-		std::cout << "anim1.bmp done" << std::endl; 
-}
+        // FLYING THROUGH TEETH
+        for(int i = 0; i < NUM_FRAMES; i++) {   
+            // Move teeth together
+            
+            snprintf(buffer, sizeof(buffer), "%d%s", i, ".bmp");
+            //raytracer.render(width, height, overViewEye, overViewView, overViewUp, overViewFOV, buffer, sphere);
+            raytracer.render(width, height, curEye, view, up, fov, buffer, sphere);
+            curEye[0] -= CAM_SPEED;
+            curEye[1] -= CAM_SPEED;
+            std::cout << buffer << " done" << std::endl; 
+        }
+        
+            std::cout << "anim1.bmp done" << std::endl; 
+    }
 	return 0;
 }
 
