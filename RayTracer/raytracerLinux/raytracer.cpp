@@ -638,12 +638,14 @@ void Raytracer::computeShading(Ray3D& ray)
 		// Reflection of l across n, vector 
 
 		Vector3D r = Vector3D(-1 * l + 2 * ray.intersection.normal.dot(l) * ray.intersection.normal);
-    		double rng1 = rand()/double(RAND_MAX);//generating random number
-    		double rng2 = rand()/double(RAND_MAX);//generating random number
-    		double rng3 = rand()/double(RAND_MAX);//generating random number
-		if ((rand() % 10) > 4) rng1*= -1; // deduct instead 
-		if ((rand() % 10) > 4) rng2*= -1; // deduct instead 
-		if ((rand() % 10) > 4) rng3*= -1; // deduct instead 
+        // Generate random numbers
+        double rng1 = rand()/double(RAND_MAX);
+        double rng2 = rand()/double(RAND_MAX);
+        double rng3 = rand()/double(RAND_MAX);
+        // Randomly decide if should deduct or add random number
+		if ((rand() % 10) > 4) rng1 *= -1; 
+		if ((rand() % 10) > 4) rng2 *= -1; 
+		if ((rand() % 10) > 4) rng3 *= -1; 
 		// only do glossy if NUMGLOSSY is more than 1, else do perfect 
 		if (NUMGLOSSY > 1)
 		{
@@ -670,10 +672,10 @@ void Raytracer::computeShading(Ray3D& ray)
 		// Get the color for this pixel by calling the shade ray function 
 		// shadeRay(ray) to generate pixel colour. 	
 		Colour tempCol = shadeRay(reflectRay); // get the colour 
-		colTwo[0] += tempCol[0]; colTwo[1] += tempCol[1]; colTwo[2] += tempCol[2];  
-
-		// Update colour of current ray (take into account lose of energy each time) 
-		
+		// Update colour of current ray (take into account lost of energy each time) 
+		colTwo[0] += tempCol[0]; 
+        colTwo[1] += tempCol[1]; 
+        colTwo[2] += tempCol[2];  
 	}
 
 	ray.col[0] += (colTwo[0]/(double)NUMGLOSSY)/(double)(RAYDEPTH - reflectRay.depth); // need divide by remaining depth of recursion each time to lose energy 
@@ -855,8 +857,6 @@ void Raytracer::render(int width, int height, Point3D eye, Vector3D view, Vector
 				Colour col; // initialize col 
 				col[0] = 0; col[1] = 0;	col[2] = 0; 
 				srand(time(NULL));  
-			
-
 				for(int ij =0; ij < NUMANTIALIASE; ij++)
 				{
 					// Anti-aliasing
@@ -889,61 +889,55 @@ void Raytracer::render(int width, int height, Point3D eye, Vector3D view, Vector
 					// point Aimed is the position of the focal plane in specified direction 
 					Point3D pointAimed; // for depth of field (depends on focal length) 
 					Point3D start = eye; // initialize
-				// If need to do depth of field 
-				if (DODEPTHOFFIELD == 1) 
-				{
-					rayDir = viewToWorld * rayDir;
-					// normalize the ray direction 
-					rayDir.normalize();
-					// start further instead of the usual eye position 
-					pointAimed = eye + FOCALLENGTH*rayDir; 
-					double radius = 1; // radius of the lens 
-
-	    				double du = rand()/double(RAND_MAX+1);//generating random number
-	    				double dv = rand()/double(RAND_MAX+1);
-					// Need jitter position of start (important for depth of field) 
-					// creating new camera position(or ray start using jittering)
-					// Definition of u and v might be wrong,
-					// may need to be direction orthogonal to light direction. 
-					//double u = radius * cos(fov); 
-					//double v = radius * sin(fov); 
-					Vector3D u = up; 
-					Vector3D v = up.cross(view); 
-					start[0]= eye[0] -(radius/2)*u[0]-(radius/2)*v[0]+radius*(du)*u[0]+radius*(dv)*v[0]; 
-					start[1]= eye[1] -(radius/2)*u[1]-(radius/2)*v[1]+radius*(du)*u[1]+radius*(dv)*v[1]; 
-					start[2]= eye[2] -(radius/2)*u[2]-(radius/2)*v[2]+radius*(du)*u[2]+radius*(dv)*v[2]; 
-					 //getting the new direction of ray
-					 rayDir = pointAimed - start;
-					 Ray3D ray = Ray3D(eye, rayDir);
-					 // normalize the ray direction 
-					 rayDir.normalize();
-				
-				}
-			
-				else
-				{
-					// update the ray Direction to change from the view matrix to the world matrix 
-					rayDir = viewToWorld * rayDir;
-					// normalize the ray direction 
-					rayDir.normalize();
-				}
-					Ray3D ray = Ray3D(start, rayDir);
-					// Now create the actual ray given the origin and ray direction (from the point origin given above) 
-					// THIS IS DEFINITELY WRONG AS IT IS ONLY
-					// INFLUENCED BY THE EYE DIRECTION AND NOT EYE POSITION 
-					//Ray3D ray = Ray3D(origin, rayDir); // original code : THIS IS WRONG!! YOU NEED START FROM EYE, NOT ORIGIN 
-
-					ray.depth = RAYDEPTH; // go to a ray depth of RAYDEPTH 
-					ray.viewToWorldRay3D = viewToWorld; 
-
-					// Get the color for this pixel by calling the shade ray function 
-					// shadeRay(ray) to generate pixel colour. 	
-					Colour colTwo = shadeRay(ray); 
-					col[0] += colTwo[0]; 
-					col[1] += colTwo[1]; 
-					col[2] += colTwo[2]; 
-				}
-
+                    // If need to do depth of field 
+                    if (DODEPTHOFFIELD == 1) 
+                    {
+                        rayDir = viewToWorld * rayDir;
+                        // normalize the ray direction 
+                        rayDir.normalize();
+                        // start further instead of the usual eye position 
+                        pointAimed = eye + FOCALLENGTH*rayDir; 
+                        double radius = 1; // radius of the lens 
+                        double du = rand()/double(RAND_MAX+1);//generating random number
+                        double dv = rand()/double(RAND_MAX+1);
+                        // Need jitter position of start (important for depth of field) 
+                        // creating new camera position(or ray start using jittering)
+                        // Definition of u and v might be wrong,
+                        // may need to be direction orthogonal to light direction. 
+                        //double u = radius * cos(fov); 
+                        //double v = radius * sin(fov); 
+                        Vector3D u = up; 
+                        Vector3D v = up.cross(view); 
+                        start[0]= eye[0] -(radius/2)*u[0]-(radius/2)*v[0]+radius*(du)*u[0]+radius*(dv)*v[0]; 
+                        start[1]= eye[1] -(radius/2)*u[1]-(radius/2)*v[1]+radius*(du)*u[1]+radius*(dv)*v[1]; 
+                        start[2]= eye[2] -(radius/2)*u[2]-(radius/2)*v[2]+radius*(du)*u[2]+radius*(dv)*v[2]; 
+                        // getting the new direction of ray
+                        rayDir = pointAimed - start;
+                        Ray3D ray = Ray3D(eye, rayDir);
+                        // normalize the ray direction 
+                        rayDir.normalize();
+                    }
+                    else
+                    {
+                        // update the ray Direction to change from the view matrix to the world matrix 
+                        rayDir = viewToWorld * rayDir;
+                        // normalize the ray direction 
+                        rayDir.normalize();
+                    }
+                    Ray3D ray = Ray3D(start, rayDir);
+                    // Now create the actual ray given the origin and ray direction (from the point origin given above) 
+                    // THIS IS DEFINITELY WRONG AS IT IS ONLY
+                    // INFLUENCED BY THE EYE DIRECTION AND NOT EYE POSITION 
+                    //Ray3D ray = Ray3D(origin, rayDir); // original code : THIS IS WRONG!! YOU NEED START FROM EYE, NOT ORIGIN 
+                    ray.depth = RAYDEPTH; // go to a ray depth of RAYDEPTH 
+                    ray.viewToWorldRay3D = viewToWorld; 
+                    // Get the color for this pixel by calling the shade ray function 
+                    // shadeRay(ray) to generate pixel colour. 	
+                    Colour colTwo = shadeRay(ray); 
+                    col[0] += colTwo[0]; 
+                    col[1] += colTwo[1]; 
+                    col[2] += colTwo[2]; 
+                }
 				col[0] /= (double) NUMANTIALIASE;  
 				col[1] /= (double) NUMANTIALIASE; 
 				col[2] /= (double) NUMANTIALIASE;  
@@ -1207,30 +1201,29 @@ int main(int argc, char* argv[])
 	// Render the scene, feel free to make the image smaller for testing purposes.	
 	// Note: Render creates and flushes the pixel buffer in 2 different functions 
     //       (it creates the pixel buffer in render() and flushes it in flushPixelBuffer() that is called by render() 
- 
     // If don't do animation 
     if (DOANIMATION == 0)
     {
         raytracer.render(width, height, eye, view, up, fov, "view1.bmp", sphere);	// output the image with name view1.bmp
-        
-        std::cout << "View1.bmp done" << std::endl; 
-        // Render it from a different point of view.
+        std::cout << "view1.bmp done" << std::endl; 
+
+        // Render it from a different points of view.
         Point3D eye2(4, 2, 1);
         Vector3D view2(-4, -2, -6);
         //Point3D eye2(2, 0, 1);
         //Vector3D view2(0, 0, -1);
         raytracer.render(width, height, eye2, view2, up, fov, "view2.bmp", sphere);	// output the image with name view2.bmp 
+        std::cout << "view2.bmp done" << std::endl; 
 
-        std::cout << "View2.bmp done" << std::endl; 
         Point3D eye3(-1, 0, 0);
         Vector3D view3(1, 0, -1);
         raytracer.render(width, height, eye3, view3, up, fov, "view3.bmp", sphere);	// output the image with name
-        std::cout << "View3.bmp done" << std::endl; 
+        std::cout << "view3.bmp done" << std::endl; 
+
         Point3D eye4(-2, 0, -6);
         Vector3D view4(1, 0, 0);
         raytracer.render(width, height, eye4, view4, up, fov, "view4.bmp", sphere);	// output the image with name
-        std::cout << "View4.bmp done" << std::endl; 
-
+        std::cout << "view4.bmp done" << std::endl; 
     }
     // Do animation
     else
