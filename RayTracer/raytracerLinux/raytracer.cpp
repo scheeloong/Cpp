@@ -25,9 +25,9 @@
 //----------------------------------------------------------------------------------------------------------
 // MODES for this ray tracer 
 //----------------------------------------------------------------------------------------------------------
-// Note: Uncomment if want them, note: must only uncomment one of these at a time 
-//#define SIGNATURE 1	// only ambient components 
-//#define PARTONEFULL 1 	// has antialias, without shadows 
+// Note: Uncomment if want them, must only uncomment one of these at a time 
+#define SIGNATURE 1 // only ambient components 
+//#define PARTONEFULL 1 // has antialias, without shadows 
 //#define SHADOW 1 // normal shadow (compulsory)
 //#define REFLECTION 1 // specular perfect reflection (compulsory) 
 //#define SOFTSHADOW 1 // demonstrates soft shadows
@@ -36,7 +36,7 @@
 //#define MOTIONBLUR 1
 //#define CYLINDERDRAW 1 // includes both blue cylinder and purple disk 
 //#define GLOSSYREFLECTION 1 
-#define FULLEVERYTHING 1 // takes few hours compile time 
+//#define FULLEVERYTHING 1 // takes few hours compile time 
 //#define ANIMATION 1 // for rendering animation , takes few days to compile 
 
 // to execute, type on terminal: 
@@ -345,7 +345,7 @@ static bool headLightPresent = false; // this is useless, for now
 
 // Initialize the root with no light source
 Raytracer::Raytracer() : _lightSource(NULL) {
-	// The root is initialize with a new node where everything in this  node is NULL 
+	// The root is initialize with a new node where everything in this node is NULL 
 	_root = new SceneDagNode();
 }
 
@@ -357,17 +357,17 @@ Raytracer::~Raytracer() {
 //----------------------------------------------------------------------------------------------------------
 // Adding Scene Objects to the Directed Acyclic Graph 
 //----------------------------------------------------------------------------------------------------------
-// This is a method from RayTracer buy returns a node instead
+// This is a method from RayTracer but returns a node instead
 SceneDagNode* Raytracer::addObject( SceneDagNode* parent, SceneObject* obj, Material* mat ) 
 {
 	// Once Raytracer is created, root points to a created object, thus, parent points to that object 
 
 	// Create a new node with SceneDagNode for the Directed Acyclic Graph  with parent object and 
+    // makes a new sceneDagNode with sceneObject obj, and material mat.
+    // Every node in the graph therefore links the object with the material 
+    // as well as the matrix transformation associated with it. 
 	// Note: Created with parent pointing to NULL 
-	SceneDagNode* node = new SceneDagNode( obj, mat ); // makes a new sceneDagNode with sceneObject obj, and material mat.
-							   // Every node in the graph therefore links the object with the material 
-							   // as well as the matrix transformation associated with it. 
-
+	SceneDagNode* node = new SceneDagNode(obj, mat); 
 	// Make this node point to the parent 
 	node->parent = parent;  // Note: Originally _root points to NULL, so first object added has parent point to NULL 
 	// Initialize the next to NULL (basically sibling), transformation applied to this node not applied to child 
@@ -379,16 +379,16 @@ SceneDagNode* Raytracer::addObject( SceneDagNode* parent, SceneObject* obj, Mate
 	// be applied to the child.
 	if (parent->child == NULL) 
 	{
-		parent->child = node;
+		parent->child = node; // no sibling, add yourself as the only child
 	}
 	// go to the child of your parent and add it to the siblings of that child 
 	else {
-		parent = parent->child;
-		while (parent->next != NULL) 
+		SceneDagNode* sibling = parent->child; // has sibling, add yourself to one of the linked list of siblings
+		while (sibling->next != NULL) 
 		{
-			parent = parent->next;
+			sibling = sibling->next;
 		}
-		parent->next = node;
+		sibling->next = node;
 	}
 	return node;
 }
@@ -396,37 +396,35 @@ SceneDagNode* Raytracer::addObject( SceneDagNode* parent, SceneObject* obj, Mate
 //----------------------------------------------------------------------------------------------------------
 // Adding Light objects to the linked list  
 //----------------------------------------------------------------------------------------------------------
-LightListNode* Raytracer::addLightSource( LightSource* light ) {
-	LightListNode* tmp = _lightSource;	// temp points to head of the linkedlist which may be null 
-	// Add the light source to the node and return it 
-	_lightSource = new LightListNode( light, tmp ); // create a new light with next pointing to head of linked list or null if it is initially empty 
-							// make the original _lightSource in ray tracer point to the new head of the node 
-	return _lightSource;	 // return the head of the linked list 
+LightListNode* Raytracer::addLightSource(LightSource* light) {
+	LightListNode* tempHead = _lightSource; // head of linked list
+	// Add the light source to the front of linkedList of light source
+	_lightSource = new LightListNode(light, tempHead); 
+	return _lightSource; // return head of the linked list
 }
-
 
 LightListNode* Raytracer::addHeadLightSource(double posX, double posY, double posZ, double colorX, double colorY, double colorZ ) {
 headLightPresent = true; 
-	this->addLightSource( new PointLight(Point3D(posX + OFFSET, posY, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
-	this->addLightSource( new PointLight(Point3D(posX - OFFSET, posY, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
-	this->addLightSource( new PointLight(Point3D(posX, posY + OFFSET, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
-	this->addLightSource( new PointLight(Point3D(posX, posY - OFFSET, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
-	this->addLightSource( new PointLight(Point3D(posX, posY , posZ + OFFSET ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
-	this->addLightSource( new PointLight(Point3D(posX, posY , posZ - OFFSET), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
-	return _lightSource;	 // return the head of the linked list 
+    // 6 positions for positive and negative offsets in X, Y, Z directions.
+	this->addLightSource(new PointLight(Point3D(posX + OFFSET, posY, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
+	this->addLightSource(new PointLight(Point3D(posX - OFFSET, posY, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
+	this->addLightSource(new PointLight(Point3D(posX, posY + OFFSET, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
+	this->addLightSource(new PointLight(Point3D(posX, posY - OFFSET, posZ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
+	this->addLightSource(new PointLight(Point3D(posX, posY , posZ + OFFSET ), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
+	this->addLightSource(new PointLight(Point3D(posX, posY , posZ - OFFSET), Colour(colorX/NUMLIGHTS, colorY/NUMLIGHTS, colorZ/NUMLIGHTS)));
+	return _lightSource; // return the head of the linked list 
 }
-
 
 //----------------------------------------------------------------------------------------------------------
 // Transformation on each individual scene object given the SceneDagNode that contains that scene object
 //----------------------------------------------------------------------------------------------------------
-void Raytracer::rotate( SceneDagNode* node, char axis, double angle ) {
-	// Create a matrix for transoformation 
+void Raytracer::rotate(SceneDagNode* node, char axis, double angle) {
+	// Create a matrix for transformation 
 	Matrix4x4 rotation;
 	double toRadian = 2*M_PI/360.0;
 	int i;
-	// QUESTION: Don't get the i 0 to 2 part 
 	for (i = 0; i < 2; i++) {
+        // Create the rotation angle for the given axis if it is given
 		switch(axis) {
 			case 'x':
 				rotation[0][0] = 1;
@@ -453,13 +451,15 @@ void Raytracer::rotate( SceneDagNode* node, char axis, double angle ) {
 				rotation[3][3] = 1;
 			break;
 		}
-		//Question What is this? 
+        // If axis isn't given, create both inverse and forward rotations.
 		if (i == 0) {
-		    node->trans = node->trans*rotation; 	
+            // Right multiply for rotation
+		    node->trans = node->trans * rotation; 	
 			angle = -angle;
 		} 
 		else {
-			node->invtrans = rotation*node->invtrans; 
+            // Left multiply for the inverse 
+			node->invtrans = rotation * node->invtrans; 
 		}	
 	}
 }
@@ -469,18 +469,18 @@ void Raytracer::translate( SceneDagNode* node, Vector3D trans ) {
 	// Node => The SceneDagNode that stores the SceneObject and material properties
 		// as well as all the transformation it has to be multiplied into 
 	Matrix4x4 translation;
+	// Update the node's transformation to multiply with the translation  (world to object) 
+	// transformation = transformation*A
 	translation[0][3] = trans[0];
 	translation[1][3] = trans[1];
 	translation[2][3] = trans[2];
-	// Update the node's transformation to multiply with the translation  (world to object) 
-	node->trans = node->trans*translation; 	
+	node->trans = node->trans * translation; 	
+	// Update the inverse transformation to multiply with translation (object to world)
+	// inverseTransformation = Ainverse*inverseTransformation 
 	translation[0][3] = -trans[0];	// put a negative, which basically means it is the inverse translation 
 	translation[1][3] = -trans[1];
 	translation[2][3] = -trans[2];
-	// Update the inverse transformation to multiply with translation (object to world)
-	node->invtrans = translation*node->invtrans; 
-	// transformation = transformation*A
-	// inverseTransformation = Ainverse*inverseTransformation 
+	node->invtrans = translation * node->invtrans; 
 }
 
 void Raytracer::scale( SceneDagNode* node, Point3D origin, double factor[3] ) {
@@ -494,6 +494,7 @@ void Raytracer::scale( SceneDagNode* node, Point3D origin, double factor[3] ) {
 	scale[1][3] = origin[1] - factor[1] * origin[1];
 	scale[2][2] = factor[2];
 	scale[2][3] = origin[2] - factor[2] * origin[2];
+
 	// transformation = transformation*A
 	node->trans = node->trans*scale; 	
 		
@@ -513,7 +514,7 @@ void Raytracer::scale( SceneDagNode* node, Point3D origin, double factor[3] ) {
 //----------------------------------------------------------------------------------------------------------
 
 // Helper function called by shadeRay() 
-void Raytracer::traverseScene( SceneDagNode* node, Ray3D& ray ) 
+void Raytracer::traverseScene(SceneDagNode* node, Ray3D& ray) 
 {
 	SceneDagNode *childPtr;
 	// Applies transformation of the current node to the global
@@ -542,12 +543,13 @@ void Raytracer::traverseScene( SceneDagNode* node, Ray3D& ray )
 }
 
 // Helper function called by shadeRay() 
-void Raytracer::computeShading( Ray3D& ray ) 
+void Raytracer::computeShading(Ray3D& ray) 
 {
 	LightListNode* curLight = _lightSource;
 	
 	// Loop through all lights 
-	for (;;) {
+	for (;;) 
+    {
 		if (curLight == NULL) break;
 		// Each lightSource provides its own shading function.
 
@@ -571,7 +573,7 @@ void Raytracer::computeShading( Ray3D& ray )
 
 			Vector3D vec = Vector3D(dx, dy, dz);
 			double epsilon = 0.001; 
-			Ray3D shadowRay = Ray3D(intersectPos, lightPos-intersectPos);
+			Ray3D shadowRay = Ray3D(intersectPos, lightPos - intersectPos);
 			//Ray3D shadowRay = Ray3D(lightPos, intersectPos-lightPos);
 			traverseScene(_root, shadowRay);
 		
@@ -617,8 +619,7 @@ void Raytracer::computeShading( Ray3D& ray )
 */
 		}
 		if(NOSHADOW == 1) isInShadow = false; // always make it not in shadow 
-			
-		curLight->light->shade(ray, isInShadow, ONLYAMBIENT,DOTEXTUREMAPSPHERE);
+		curLight->light->shade(ray, isInShadow, ONLYAMBIENT, DOTEXTUREMAPSPHERE);
 		curLight = curLight->next;
 	}
 	//Done looping through all lights, now compute reflection 
@@ -783,7 +784,7 @@ void Raytracer::flushPixelBuffer( char *file_name )
 }
 
 // This function computes a color for a particular pixel, given a ray towards that pixel. 
-Colour Raytracer::shadeRay( Ray3D& ray) 
+Colour Raytracer::shadeRay(Ray3D& ray) 
 {
 	// Initialize the color to black 
 	Colour col(0.0, 0.0, 0.0); 
